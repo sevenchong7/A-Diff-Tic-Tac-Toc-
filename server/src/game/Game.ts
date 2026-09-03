@@ -1,5 +1,14 @@
 import { Board } from "./Board";
 import { WinRule } from "./rules/WinRule";
+import {
+  MIN_BOARD_ROWS,
+  MAX_BOARD_ROWS,
+  MIN_BOARD_COLUMNS,
+  MAX_BOARD_COLUMNS,
+  MIN_WIN_REQUIREMENT,
+  MAX_WIN_REQUIREMENT,
+} from "./constants";
+
 
 interface GamePlayer {
   id: string;
@@ -16,8 +25,50 @@ export class Game {
 
   private winRequirement: number;
 
-  constructor(player1Id: string, player2Id: string) {
-    this.board = new Board(3, 3);
+  constructor(
+    player1Id: string,
+    player2Id: string,
+    rows: number,
+    columns: number,
+    winRequirement: number
+  ) {
+    if (
+      rows < MIN_BOARD_ROWS ||
+      rows > MAX_BOARD_ROWS
+    ) {
+      throw new Error(
+        `Rows must be between ${MIN_BOARD_ROWS} and ${MAX_BOARD_ROWS}`
+      );
+    }
+
+    if (
+      columns < MIN_BOARD_COLUMNS ||
+      columns > MAX_BOARD_COLUMNS
+    ) {
+      throw new Error(
+        `Columns must be between ${MIN_BOARD_COLUMNS} and ${MAX_BOARD_COLUMNS}`
+      );
+    }
+
+    if (
+      winRequirement < MIN_WIN_REQUIREMENT ||
+      winRequirement > MAX_WIN_REQUIREMENT
+    ) {
+      throw new Error(
+        `Win requirement must be between ${MIN_WIN_REQUIREMENT} and ${MAX_WIN_REQUIREMENT}`
+      );
+    }
+
+    if (
+      winRequirement > rows &&
+      winRequirement > columns
+    ) {
+      throw new Error(
+        "Win requirement is impossible on this board"
+      );
+    }
+
+    this.board = new Board(rows, columns);
 
     this.players = [
       {
@@ -34,7 +85,7 @@ export class Game {
 
     this.status = "PLAYING";
 
-    this.winRequirement = 3;
+    this.winRequirement = winRequirement;
   }
 
   private switchTurn(): void {

@@ -3,6 +3,12 @@ import type {
   Cell,
   Sign,
 } from "@shared/types/game";
+import {
+  MIN_BOARD_ROWS,
+  MAX_BOARD_ROWS,
+  MIN_BOARD_COLUMNS,
+  MAX_BOARD_COLUMNS,
+} from "./constants";
 
 export class Board {
   private data: BoardData;
@@ -65,6 +71,78 @@ export class Board {
     }
 
     cell.sign = sign;
+  }
+
+  public addRow(position: number): void {
+    if (this.data.rows >= MAX_BOARD_ROWS) {
+      throw new Error("Maximum number of rows reached");
+    }
+
+    if (position < 0 || position > this.data.rows) {
+      throw new Error("Invalid row insertion position");
+    }
+
+    const newRow: Cell[] = [];
+
+    for (let column = 0; column < this.data.columns; column++) {
+      newRow.push({
+        sign: null,
+        blocked: false,
+      });
+    }
+
+    this.data.cells.splice(position, 0, newRow);
+
+    this.data.rows++;
+  }
+
+  public addColumn(position: number): void {
+    if (this.data.columns >= MAX_BOARD_COLUMNS) {
+      throw new Error("Maximum number of columns reached");
+    }
+
+    if (position < 0 || position > this.data.columns) {
+      throw new Error("Invalid column insertion position");
+    }
+
+    for (const row of this.data.cells) {
+      row.splice(position, 0, {
+        sign: null,
+        blocked: false,
+      });
+    }
+
+    this.data.columns++;
+  }
+
+  public removeRow(position: number): void {
+    if (this.data.rows <= MIN_BOARD_ROWS) {
+      throw new Error("Cannot remove row below minimum board size");
+    }
+
+    if (position < 0 || position >= this.data.rows) {
+      throw new Error("Invalid row removal position");
+    }
+
+    this.data.cells.splice(position, 1);
+
+    this.data.rows--;
+  }
+
+  public removeColumn(position: number): void {
+    if (this.data.columns <= MIN_BOARD_COLUMNS) {
+      throw new Error("Cannot remove column below minimum board size");
+    }
+
+    if (position < 0 || position >= this.data.columns) {
+      throw new Error("Invalid column removal position");
+    }
+
+    for (const row of this.data.cells) {
+      row.splice(position, 1);
+    }
+
+    this.data.columns--;
   }
 
   getData(): BoardData {
