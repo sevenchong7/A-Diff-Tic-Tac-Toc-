@@ -145,6 +145,121 @@ export class Board {
     this.data.columns--;
   }
 
+  public moveSign(
+    row: number,
+    column: number,
+    direction: "up" | "down" | "left" | "right"
+  ): void {
+    if (!this.isValidPosition(row, column)) {
+      throw new Error("Invalid board position");
+    }
+
+    const sourceCell = this.data.cells[row][column];
+
+    if (sourceCell.sign === null) {
+      throw new Error("There is no sign to move");
+    }
+
+    let targetRow = row;
+    let targetColumn = column;
+
+    switch (direction) {
+      case "up":
+        targetRow =
+          (row - 1 + this.data.rows) % this.data.rows;
+        break;
+
+      case "down":
+        targetRow =
+          (row + 1) % this.data.rows;
+        break;
+
+      case "left":
+        targetColumn =
+          (column - 1 + this.data.columns) %
+          this.data.columns;
+        break;
+
+      case "right":
+        targetColumn =
+          (column + 1) % this.data.columns;
+        break;
+    }
+
+    const targetCell =
+      this.data.cells[targetRow][targetColumn];
+
+    // Swap the signs
+    const tempSign = sourceCell.sign;
+
+    sourceCell.sign = targetCell.sign;
+    targetCell.sign = tempSign;
+  }
+
+  public moveRowRight(row: number): void {
+    if (row < 0 || row >= this.data.rows) {
+      throw new Error("Invalid row");
+    }
+
+    const currentRow = this.data.cells[row];
+
+    const lastCell = currentRow[currentRow.length - 1];
+
+    for (let column = currentRow.length - 1; column > 0; column--) {
+      currentRow[column] = currentRow[column - 1];
+    }
+
+    currentRow[0] = lastCell;
+  }
+
+  public moveRowLeft(row: number): void {
+    if (row < 0 || row >= this.data.rows) {
+      throw new Error("Invalid row");
+    }
+
+    const currentRow = this.data.cells[row];
+
+    const firstCell = currentRow[0];
+
+    for (let column = 0; column < currentRow.length - 1; column++) {
+      currentRow[column] = currentRow[column + 1];
+    }
+
+    currentRow[currentRow.length - 1] = firstCell;
+  }
+
+  public moveColumnUp(column: number): void {
+    if (column < 0 || column >= this.data.columns) {
+      throw new Error("Invalid column");
+    }
+
+    const firstCell = this.data.cells[0][column];
+
+    for (let row = 0; row < this.data.rows - 1; row++) {
+      this.data.cells[row][column] =
+        this.data.cells[row + 1][column];
+    }
+
+    this.data.cells[this.data.rows - 1][column] = firstCell;
+  }
+
+
+  public moveColumnDown(column: number): void {
+    if (column < 0 || column >= this.data.columns) {
+      throw new Error("Invalid column");
+    }
+
+    const currentColumnBottom =
+      this.data.cells[this.data.rows - 1][column];
+
+    for (let row = this.data.rows - 1; row > 0; row--) {
+      this.data.cells[row][column] =
+        this.data.cells[row - 1][column];
+    }
+
+    this.data.cells[0][column] = currentColumnBottom;
+  }
+
   getData(): BoardData {
     return this.data;
   }
