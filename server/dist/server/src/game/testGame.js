@@ -1,20 +1,42 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Game_1 = require("./Game");
-// const game = new Game("Alice", "Bob", 2, 3, 3);
-const game = new Game_1.Game("Alice", "Bob", 5, 5, 4);
-console.log("Current player:");
-console.log(game.getCurrentPlayer());
-game.placeSign("Alice", 0, 0);
-console.log("After Alice:");
+const game = new Game_1.Game("player1", "player2", 3, 3, 3);
+// Player 1 places a sign
+game.placeSign("player1", 0, 0);
+game.placeSign("player2", 0, 1);
+console.log("Player 1 hand:");
+console.dir(game.getPlayerHand("player1"), { depth: null });
+console.log("Board before card:");
 console.dir(game.getBoard(), { depth: null });
-console.log("Current player:");
-console.log(game.getCurrentPlayer());
-game.placeSign("Bob", 1, 0);
-game.placeSign("Alice", 0, 1);
-game.placeSign("Bob", 1, 1);
-game.placeSign("Alice", 0, 2);
-game.placeSign("Bob", 1, 2);
-game.placeSign("Alice", 0, 3);
-console.log("Final status:");
-console.log(game.getStatus());
+const hand = game.getPlayerHand("player1");
+const card = hand[0];
+console.log("Using card:", card);
+// game.useCard(
+//   "player1",
+//   card.id,
+//   0,
+//   0,
+//   "right"
+// );
+game.useCard("player1", card.id, {
+    "row": 0,
+    "column": 0,
+    direction: "right"
+});
+// const secondHand = game.getPlayerHand("player1");
+// console.log("Player 1 hand:");
+// console.dir(secondHand, { depth: null });
+// const secondCard = secondHand[0];
+// game.useCard(
+//   "player1",
+//   secondCard.id,
+//   0,
+//   1,
+//   "right"
+// );
+console.log("Board after card:");
+console.dir(game.getBoard(), { depth: null });
+console.log("Player 1 hand after using card:");
+console.dir(game.getPlayerHand("player1"), { depth: null });
+console.log("Current player:", game.getCurrentPlayer());

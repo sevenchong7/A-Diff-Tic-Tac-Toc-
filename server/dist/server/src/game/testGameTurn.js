@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const Game_1 = require("./Game");
+const game = new Game_1.Game("player1", "player2", 3, 3, 3);
+console.log("Player 1 hand:");
+console.dir(game.getPlayerHand("player1"), { depth: null });
+console.log("Player 2 hand:");
+console.dir(game.getPlayerHand("player2"), { depth: null });
+console.log("Current player:");
+console.log(game.getCurrentPlayer());
+game.placeSign("player1", 0, 0);
+console.log("After Player 1's turn:");
+console.log("Current player:", game.getCurrentPlayer());
+console.log("Player 2 hand:");
+console.dir(game.getPlayerHand("player2"), { depth: null });

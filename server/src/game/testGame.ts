@@ -1,38 +1,87 @@
 import { Game } from "./Game";
 
-// const game = new Game("Alice", "Bob", 2, 3, 3);
-
 const game = new Game(
-  "Alice",
-  "Bob",
-  5,
-  5,
-  4
+  "player1",
+  "player2",
+  3,
+  3,
+  3
+);
+
+// Player 1 places a sign
+game.placeSign("player1", 0, 0);
+
+game.placeSign("player2", 0, 1);
+
+console.log("Player 1 hand:");
+console.dir(
+  game.getPlayerHand("player1"),
+  { depth: null }
+);
+
+console.log("Board before card:");
+console.dir(
+  game.getBoard(),
+  { depth: null }
 );
 
 
+const hand = game.getPlayerHand("player1");
 
-console.log("Current player:");
-console.log(game.getCurrentPlayer());
+const card = hand[0];
 
-game.placeSign("Alice", 0, 0);
+console.log("Using card:", card);
 
-console.log("After Alice:");
-console.dir(game.getBoard(), { depth: null });
+// game.useCard(
+//   "player1",
+//   card.id,
+//   0,
+//   0,
+//   "right"
+// );
 
-console.log("Current player:");
-console.log(game.getCurrentPlayer());
 
-game.placeSign("Bob", 1, 0);
 
-game.placeSign("Alice", 0, 1);
+game.useCard(
+  "player1",
+  card.id,
+  {
+    "row": 0,
+    "column": 0,
+    direction: "right"
+  }
+);
 
-game.placeSign("Bob", 1, 1);
+// const secondHand = game.getPlayerHand("player1");
 
-game.placeSign("Alice", 0, 2);
-game.placeSign("Bob", 1, 2);
+// console.log("Player 1 hand:");
+// console.dir(secondHand, { depth: null });
 
-game.placeSign("Alice", 0, 3);
+// const secondCard = secondHand[0];
 
-console.log("Final status:");
-console.log(game.getStatus());
+// game.useCard(
+//   "player1",
+//   secondCard.id,
+//   0,
+//   1,
+//   "right"
+// );
+
+
+console.log("Board after card:");
+console.dir(
+  game.getBoard(),
+  { depth: null }
+);
+
+console.log("Player 1 hand after using card:");
+console.dir(
+  game.getPlayerHand("player1"),
+  { depth: null }
+);
+
+console.log(
+  "Current player:",
+  game.getCurrentPlayer()
+);
+

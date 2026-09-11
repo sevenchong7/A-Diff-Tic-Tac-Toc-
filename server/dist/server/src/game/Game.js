@@ -4,10 +4,17 @@ exports.Game = void 0;
 const Board_1 = require("./Board");
 const WinRule_1 = require("./rules/WinRule");
 const constants_1 = require("./constants");
+const CardManager_1 = require("./cards/CardManager");
+const CardDeck_1 = require("./cards/CardDeck");
+const MoveSignEffect_1 = require("./cards/effects/MoveSignEffect");
+const MoveSignVerticalEffect_1 = require("./cards/effects/MoveSignVerticalEffect");
+const MoveRowColumnEffect_1 = require("./cards/effects/MoveRowColumnEffect");
 class Game {
     board;
     players;
+    deck;
     currentPlayerIndex;
+    skillCardsUsedThisTurn;
     status;
     winRequirement;
     constructor(player1Id, player2Id, rows, columns, winRequirement) {
@@ -28,23 +35,36 @@ class Game {
             throw new Error("Win requirement is impossible on this board");
         }
         this.board = new Board_1.Board(rows, columns);
+        this.deck = new CardDeck_1.CardDeck();
         this.players = [
             {
                 id: player1Id,
                 sign: "X",
+                cardManager: new CardManager_1.CardManager(),
+                doubleSkillActivationsRemaining: 3,
             },
             {
                 id: player2Id,
                 sign: "O",
+                cardManager: new CardManager_1.CardManager(),
+                doubleSkillActivationsRemaining: 3,
             },
         ];
+        this.players.forEach((player) => {
+            player.cardManager.drawCard(this.deck);
+            player.cardManager.drawCard(this.deck);
+            player.cardManager.drawCard(this.deck);
+        });
         this.currentPlayerIndex = 0;
+        this.skillCardsUsedThisTurn = 0;
         this.status = "PLAYING";
         this.winRequirement = winRequirement;
+        this.startTurn();
     }
     switchTurn() {
         this.currentPlayerIndex =
             this.currentPlayerIndex === 0 ? 1 : 0;
+        this.startTurn();
     }
     isBoardFull() {
         const board = this.board.getData();
@@ -105,6 +125,106 @@ class Game {
         if (hasWon) {
             this.status = "FINISHED";
             console.log(`Player ${currentPlayer.id} (${currentPlayer.sign}) wins!`);
+            return;
+        }
+    }
+    drawCard(playerId) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        currentPlayer.cardManager.drawCard(this.deck);
+    }
+    getPlayerHand(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.cardManager.getHand();
+    }
+    startTurn() {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        this.skillCardsUsedThisTurn = 0;
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        currentPlayer.cardManager.drawCard(this.deck);
+    }
+    useCard(playerId, cardId, action) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        if (this.skillCardsUsedThisTurn >= 1) {
+            throw new Error("You can only use 1 skill card per turn");
+        }
+        const hand = currentPlayer.cardManager.getHand();
+        const card = hand.find((card) => card.id === cardId);
+        if (!card) {
+            throw new Error("Card not found in hand");
+        }
+        if (card.type !== "MOVE_SIGN_HORIZONTAL" &&
+            card.type !== "MOVE_SIGN_VERTICAL" &&
+            card.type !== "MOVE_ROW_COLUMN") {
+            throw new Error("This card cannot be used here");
+        }
+        if (card.type === "MOVE_SIGN_HORIZONTAL") {
+            if (action.row === undefined ||
+                action.column === undefined) {
+                throw new Error("Move Sign requires row and column");
+            }
+            if (action.direction !== "left" &&
+                action.direction !== "right") {
+                throw new Error("Horizontal movement requires left or right");
+            }
+            const cell = this.board.getCell(action.row, action.column);
+            if (cell.sign !== currentPlayer.sign) {
+                throw new Error("You can only move your own sign");
+            }
+            (0, MoveSignEffect_1.moveSignEffect)(this.board, action.row, action.column, action.direction);
+        }
+        if (card.type === "MOVE_SIGN_VERTICAL") {
+            if (action.row === undefined ||
+                action.column === undefined) {
+                throw new Error("Move Sign requires row and column");
+            }
+            if (action.direction !== "up" &&
+                action.direction !== "down") {
+                throw new Error("Vertical movement requires up or down");
+            }
+            const cell = this.board.getCell(action.row, action.column);
+            if (cell.sign !== currentPlayer.sign) {
+                throw new Error("You can only move your own sign");
+            }
+            (0, MoveSignVerticalEffect_1.moveSignVerticalEffect)(this.board, action.row, action.column, action.direction);
+        }
+        if (card.type === "MOVE_ROW_COLUMN") {
+            if (action.direction === "left" ||
+                action.direction === "right") {
+                if (action.row === undefined) {
+                    throw new Error("Row movement requires a row");
+                }
+                (0, MoveRowColumnEffect_1.moveRowColumnEffect)(this.board, action.row, action.direction);
+            }
+            if (action.direction === "up" ||
+                action.direction === "down") {
+                if (action.column === undefined) {
+                    throw new Error("Column movement requires a column");
+                }
+                (0, MoveRowColumnEffect_1.moveRowColumnEffect)(this.board, action.column, action.direction);
+            }
+        }
+        currentPlayer.cardManager.removeCard(cardId);
+        this.skillCardsUsedThisTurn++;
+        if (WinRule_1.WinRule.hasWon(this.board, currentPlayer.sign, this.winRequirement)) {
+            this.status = "FINISHED";
+            console.log(`${currentPlayer.id} wins!`);
             return;
         }
     }

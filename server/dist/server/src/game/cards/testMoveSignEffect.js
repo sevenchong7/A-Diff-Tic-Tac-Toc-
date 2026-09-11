@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const Board_1 = require("../Board");
+const MoveSignEffect_1 = require("./effects/MoveSignEffect");
+const board = new Board_1.Board(3, 3);
+board.placeSign(0, 2, "X");
+console.log("Before:");
+console.dir(board.getData(), { depth: null });
+// moveSignEffect(board, 0, 0, "right");
+(0, MoveSignEffect_1.moveSignEffect)(board, 0, 2, "right");
+console.log("After:");
+console.dir(board.getData(), { depth: null });
