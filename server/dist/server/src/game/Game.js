@@ -15,6 +15,7 @@ class Game {
     deck;
     currentPlayerIndex;
     skillCardsUsedThisTurn;
+    doubleSkillActive;
     status;
     winRequirement;
     constructor(player1Id, player2Id, rows, columns, winRequirement) {
@@ -57,6 +58,7 @@ class Game {
         });
         this.currentPlayerIndex = 0;
         this.skillCardsUsedThisTurn = 0;
+        this.doubleSkillActive = false;
         this.status = "PLAYING";
         this.winRequirement = winRequirement;
         this.startTurn();
@@ -150,6 +152,7 @@ class Game {
             throw new Error("Game is not currently playing");
         }
         this.skillCardsUsedThisTurn = 0;
+        this.doubleSkillActive = false;
         const currentPlayer = this.players[this.currentPlayerIndex];
         currentPlayer.cardManager.drawCard(this.deck);
     }
@@ -161,8 +164,10 @@ class Game {
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
         }
-        if (this.skillCardsUsedThisTurn >= 1) {
-            throw new Error("You can only use 1 skill card per turn");
+        const maxSkillCardsThisTurn = this.doubleSkillActive ? 2 : 1;
+        if (this.skillCardsUsedThisTurn >=
+            maxSkillCardsThisTurn) {
+            throw new Error(`You can only use ${maxSkillCardsThisTurn} skill card${maxSkillCardsThisTurn > 1 ? "s" : ""} per turn`);
         }
         const hand = currentPlayer.cardManager.getHand();
         const card = hand.find((card) => card.id === cardId);
@@ -227,6 +232,30 @@ class Game {
             console.log(`${currentPlayer.id} wins!`);
             return;
         }
+    }
+    activateDoubleSkill(playerId) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        if (currentPlayer.doubleSkillActivationsRemaining <= 0) {
+            throw new Error("No Double Skill activations remaining");
+        }
+        if (this.doubleSkillActive) {
+            throw new Error("Double Skill is already active");
+        }
+        this.doubleSkillActive = true;
+        currentPlayer.doubleSkillActivationsRemaining--;
+    }
+    getDoubleSkillActivationsRemaining(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.doubleSkillActivationsRemaining;
     }
 }
 exports.Game = Game;

@@ -14,15 +14,15 @@ export class CardDeck {
       },
       {
         ...moveSignCard,
-        id: "move-sign-2",
+        id: "move-sign-1",
       },
       {
         ...moveSignCard,
-        id: "move-sign-3",
+        id: "move-sign-1",
       },
       {
         ...moveSignCard,
-        id: "move-sign-4",
+        id: "move-sign-1",
       },
       {
         ...moveSignCard,
