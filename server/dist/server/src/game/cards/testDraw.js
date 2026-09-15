@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CardDeck_1 = require("./CardDeck");
 const CardManager_1 = require("./CardManager");
-const MoveSignCard_1 = require("./effects/MoveSignCard");
+const MoveSignCard_1 = require("./MoveSignCard");
 const deck = new CardDeck_1.CardDeck();
 const cardManager = new CardManager_1.CardManager();
 // Draw 5 cards

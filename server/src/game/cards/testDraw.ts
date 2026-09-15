@@ -1,6 +1,6 @@
 import { CardDeck } from "./CardDeck";
 import { CardManager } from "./CardManager";
-import { moveSignCard } from "./effects/MoveSignCard";
+import { moveSignCard } from "./MoveSignCard";
 
 const deck = new CardDeck();
 const cardManager = new CardManager();

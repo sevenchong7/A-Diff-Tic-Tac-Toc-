@@ -1,4 +1,4 @@
-import type { Card } from "../Card";
+import type { Card } from "./Card";
 
 export const moveSignCard: Card = {
   id: "move-sign-horizontal",

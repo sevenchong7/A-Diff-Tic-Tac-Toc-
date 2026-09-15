@@ -4,12 +4,16 @@ exports.Board = void 0;
 const constants_1 = require("./constants");
 class Board {
     data;
+    blockedRows;
+    blockedColumns;
     constructor(rows, columns) {
         this.data = {
             rows,
             columns,
             cells: [],
         };
+        this.blockedRows = new Set();
+        this.blockedColumns = new Set();
         this.createCells();
     }
     createCells() {
@@ -44,8 +48,8 @@ class Board {
         if (cell.sign !== null) {
             throw new Error("Cell is already occupied");
         }
-        if (cell.blocked) {
-            throw new Error("Cell is blocked");
+        if (cell.sign !== null) {
+            throw new Error("Cell is already occupied");
         }
         cell.sign = sign;
     }
@@ -184,6 +188,48 @@ class Board {
     }
     getData() {
         return this.data;
+    }
+    blockRow(row) {
+        if (row < 0 || row >= this.data.rows) {
+            throw new Error("Invalid row");
+        }
+        this.blockedRows.add(row);
+    }
+    blockColumn(column) {
+        if (column < 0 || column >= this.data.columns) {
+            throw new Error("Invalid column");
+        }
+        this.blockedColumns.add(column);
+    }
+    isRowBlocked(row) {
+        if (row < 0 || row >= this.data.rows) {
+            throw new Error("Invalid row");
+        }
+        return this.blockedRows.has(row);
+    }
+    isColumnBlocked(column) {
+        if (column < 0 || column >= this.data.columns) {
+            throw new Error("Invalid column");
+        }
+        return this.blockedColumns.has(column);
+    }
+    unblockRow(row) {
+        if (row < 0 || row >= this.data.rows) {
+            throw new Error("Invalid row");
+        }
+        this.blockedRows.delete(row);
+    }
+    unblockColumn(column) {
+        if (column < 0 || column >= this.data.columns) {
+            throw new Error("Invalid column");
+        }
+        this.blockedColumns.delete(column);
+    }
+    unblockCell(row, column) {
+        if (!this.isValidPosition(row, column)) {
+            throw new Error("Invalid board position");
+        }
+        this.data.cells[row][column].blocked = false;
     }
 }
 exports.Board = Board;

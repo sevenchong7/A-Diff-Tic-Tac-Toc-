@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CardDeck = void 0;
-const MoveSignCard_1 = require("./effects/MoveSignCard");
-const MoveSignVerticalCard_1 = require("./effects/MoveSignVerticalCard");
-const MoveRowColumnCard_1 = require("./effects/MoveRowColumnCard");
+const MoveSignCard_1 = require("./MoveSignCard");
+const MoveSignVerticalCard_1 = require("./MoveSignVerticalCard");
+const MoveRowColumnCard_1 = require("./MoveRowColumnCard");
+const BlockCellCard_1 = require("./BlockCellCard");
 class CardDeck {
     cards;
     constructor() {
@@ -14,15 +15,15 @@ class CardDeck {
             },
             {
                 ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-2",
+                id: "move-sign-1",
             },
             {
                 ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-3",
+                id: "move-sign-1",
             },
             {
                 ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-4",
+                id: "move-sign-1",
             },
             {
                 ...MoveSignCard_1.moveSignCard,
@@ -95,6 +96,26 @@ class CardDeck {
             {
                 ...MoveRowColumnCard_1.moveRowColumnCard,
                 id: "move-row-column-5",
+            },
+            {
+                ...BlockCellCard_1.blockCellCard,
+                id: "block-cell-1",
+            },
+            {
+                ...BlockCellCard_1.blockCellCard,
+                id: "block-cell-2",
+            },
+            {
+                ...BlockCellCard_1.blockCellCard,
+                id: "block-cell-3",
+            },
+            {
+                ...BlockCellCard_1.blockCellCard,
+                id: "block-cell-4",
+            },
+            {
+                ...BlockCellCard_1.blockCellCard,
+                id: "block-cell-5",
             },
         ];
     }

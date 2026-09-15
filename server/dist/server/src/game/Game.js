@@ -9,6 +9,7 @@ const CardDeck_1 = require("./cards/CardDeck");
 const MoveSignEffect_1 = require("./cards/effects/MoveSignEffect");
 const MoveSignVerticalEffect_1 = require("./cards/effects/MoveSignVerticalEffect");
 const MoveRowColumnEffect_1 = require("./cards/effects/MoveRowColumnEffect");
+const BlockCellEffect_1 = require("./cards/effects/BlockCellEffect");
 class Game {
     board;
     players;
@@ -16,6 +17,9 @@ class Game {
     currentPlayerIndex;
     skillCardsUsedThisTurn;
     doubleSkillActive;
+    doubleDrawActive;
+    blockedLines;
+    blockedCells;
     status;
     winRequirement;
     constructor(player1Id, player2Id, rows, columns, winRequirement) {
@@ -43,12 +47,14 @@ class Game {
                 sign: "X",
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
+                doubleDrawActivationsRemaining: 2,
             },
             {
                 id: player2Id,
                 sign: "O",
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
+                doubleDrawActivationsRemaining: 2,
             },
         ];
         this.players.forEach((player) => {
@@ -57,13 +63,18 @@ class Game {
             player.cardManager.drawCard(this.deck);
         });
         this.currentPlayerIndex = 0;
+        this.blockedLines = [];
+        this.blockedCells = [];
         this.skillCardsUsedThisTurn = 0;
         this.doubleSkillActive = false;
+        this.doubleDrawActive = false;
         this.status = "PLAYING";
         this.winRequirement = winRequirement;
         this.startTurn();
     }
     switchTurn() {
+        const endingPlayer = this.players[this.currentPlayerIndex];
+        this.updateBlockedLines(endingPlayer.id);
         this.currentPlayerIndex =
             this.currentPlayerIndex === 0 ? 1 : 0;
         this.startTurn();
@@ -87,6 +98,15 @@ class Game {
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
         }
+        if (currentPlayer.cardManager.needsDiscard()) {
+            throw new Error("You must discard cards before continuing");
+        }
+        if (this.isPlacementBlocked(playerId, row, column)) {
+            throw new Error("This position is blocked for you");
+        }
+        if (this.isCellPlacementBlocked(playerId, row, column)) {
+            throw new Error("This cell is blocked for you");
+        }
         this.board.placeSign(row, column, currentPlayer.sign);
         const hasWon = WinRule_1.WinRule.hasWon(this.board, currentPlayer.sign, this.winRequirement);
         if (hasWon) {
@@ -102,7 +122,7 @@ class Game {
         this.switchTurn();
     }
     getBoard() {
-        return this.board.getData();
+        return this.board;
     }
     getCurrentPlayer() {
         return this.players[this.currentPlayerIndex];
@@ -153,6 +173,7 @@ class Game {
         }
         this.skillCardsUsedThisTurn = 0;
         this.doubleSkillActive = false;
+        this.doubleDrawActive = false;
         const currentPlayer = this.players[this.currentPlayerIndex];
         currentPlayer.cardManager.drawCard(this.deck);
     }
@@ -163,6 +184,9 @@ class Game {
         const currentPlayer = this.players[this.currentPlayerIndex];
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
+        }
+        if (currentPlayer.cardManager.needsDiscard()) {
+            throw new Error("You must discard cards before continuing");
         }
         const maxSkillCardsThisTurn = this.doubleSkillActive ? 2 : 1;
         if (this.skillCardsUsedThisTurn >=
@@ -176,7 +200,8 @@ class Game {
         }
         if (card.type !== "MOVE_SIGN_HORIZONTAL" &&
             card.type !== "MOVE_SIGN_VERTICAL" &&
-            card.type !== "MOVE_ROW_COLUMN") {
+            card.type !== "MOVE_ROW_COLUMN" &&
+            card.type !== "BLOCK_CELL") {
             throw new Error("This card cannot be used here");
         }
         if (card.type === "MOVE_SIGN_HORIZONTAL") {
@@ -225,6 +250,14 @@ class Game {
                 (0, MoveRowColumnEffect_1.moveRowColumnEffect)(this.board, action.column, action.direction);
             }
         }
+        if (card.type === "BLOCK_CELL") {
+            if (action.row === undefined ||
+                action.column === undefined) {
+                throw new Error("Row and column are required");
+            }
+            (0, BlockCellEffect_1.blockCellEffect)(this.board, action.row, action.column);
+            this.addBlockedCell(action.row, action.column, playerId);
+        }
         currentPlayer.cardManager.removeCard(cardId);
         this.skillCardsUsedThisTurn++;
         if (WinRule_1.WinRule.hasWon(this.board, currentPlayer.sign, this.winRequirement)) {
@@ -256,6 +289,95 @@ class Game {
             throw new Error("Player not found");
         }
         return player.doubleSkillActivationsRemaining;
+    }
+    getMaxSkillCardsThisTurn() {
+        return this.doubleSkillActive ? 2 : 1;
+    }
+    activateDoubleDraw(playerId) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        if (currentPlayer.doubleDrawActivationsRemaining <= 0) {
+            throw new Error("No Double Draw activations remaining");
+        }
+        if (this.doubleDrawActive) {
+            throw new Error("Double Draw is already active");
+        }
+        this.doubleDrawActive = true;
+        currentPlayer.cardManager.drawCard(this.deck);
+        currentPlayer.doubleDrawActivationsRemaining--;
+    }
+    getDoubleDrawActivationsRemaining(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.doubleDrawActivationsRemaining;
+    }
+    discardCard(playerId, cardId) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        currentPlayer.cardManager.discardCard(cardId);
+    }
+    isPlacementBlocked(playerId, row, column) {
+        return this.blockedLines.some((blockedLine) => {
+            const affectsPosition = (blockedLine.type === "row" &&
+                blockedLine.index === row) ||
+                (blockedLine.type === "column" &&
+                    blockedLine.index === column);
+            return (affectsPosition &&
+                blockedLine.blockedByPlayerId !== playerId);
+        });
+    }
+    addBlockedLine(type, index, playerId) {
+        this.blockedLines.push({
+            type,
+            index,
+            remainingTurns: 2,
+            blockedByPlayerId: playerId,
+        });
+    }
+    updateBlockedLines(playerId) {
+        for (const blockedLine of this.blockedLines) {
+            if (blockedLine.blockedByPlayerId !== playerId) {
+                blockedLine.remainingTurns--;
+            }
+        }
+        this.blockedLines = this.blockedLines.filter((blockedLine) => blockedLine.remainingTurns > 0);
+        for (const blockedCell of this.blockedCells) {
+            if (blockedCell.blockedByPlayerId !== playerId) {
+                blockedCell.remainingTurns--;
+            }
+        }
+        this.blockedCells = this.blockedCells.filter((blockedCell) => {
+            if (blockedCell.remainingTurns <= 0) {
+                this.board.unblockCell(blockedCell.row, blockedCell.column);
+                return false;
+            }
+            return true;
+        });
+    }
+    addBlockedCell(row, column, playerId) {
+        this.blockedCells.push({
+            row,
+            column,
+            remainingTurns: 2,
+            blockedByPlayerId: playerId,
+        });
+    }
+    isCellPlacementBlocked(playerId, row, column) {
+        return this.blockedCells.some((blockedCell) => blockedCell.row === row &&
+            blockedCell.column === column &&
+            blockedCell.blockedByPlayerId !== playerId);
     }
 }
 exports.Game = Game;

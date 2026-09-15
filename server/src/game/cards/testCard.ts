@@ -1,4 +1,4 @@
-import { moveSignCard } from "./effects/MoveSignCard";
+import { moveSignCard } from "./MoveSignCard";
 
 console.log("Card:");
 

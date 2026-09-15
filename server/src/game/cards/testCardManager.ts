@@ -1,5 +1,5 @@
 import { CardManager } from "./CardManager";
-import { moveSignCard } from "./effects/MoveSignCard";
+import { moveSignCard } from "./MoveSignCard";
 
 const cardManager = new CardManager();
 

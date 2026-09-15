@@ -1,7 +1,8 @@
 import type { Card } from "./Card";
-import { moveSignCard } from "./effects/MoveSignCard";
-import { moveSignVerticalCard } from "./effects/MoveSignVerticalCard";
-import { moveRowColumnCard } from "./effects/MoveRowColumnCard";
+import { moveSignCard } from "./MoveSignCard";
+import { moveSignVerticalCard } from "./MoveSignVerticalCard";
+import { moveRowColumnCard } from "./MoveRowColumnCard";
+import { blockCellCard } from "./BlockCellCard";
 
 export class CardDeck {
   private cards: Card[];
@@ -95,6 +96,26 @@ export class CardDeck {
       {
         ...moveRowColumnCard,
         id: "move-row-column-5",
+      },
+      {
+        ...blockCellCard,
+        id: "block-cell-1",
+      },
+      {
+        ...blockCellCard,
+        id: "block-cell-2",
+      },
+      {
+        ...blockCellCard,
+        id: "block-cell-3",
+      },
+      {
+        ...blockCellCard,
+        id: "block-cell-4",
+      },
+      {
+        ...blockCellCard,
+        id: "block-cell-5",
       },
     ];
   }

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CardManager_1 = require("./CardManager");
-const MoveSignCard_1 = require("./effects/MoveSignCard");
+const MoveSignCard_1 = require("./MoveSignCard");
 const cardManager = new CardManager_1.CardManager();
 // console.log("Initial hand:");
 // console.dir(cardManager.getHand(), {

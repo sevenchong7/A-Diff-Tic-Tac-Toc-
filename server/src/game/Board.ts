@@ -13,12 +13,18 @@ import {
 export class Board {
   private data: BoardData;
 
+  private blockedRows: Set<number>;
+  private blockedColumns: Set<number>;
+
   constructor(rows: number, columns: number) {
     this.data = {
       rows,
       columns,
       cells: [],
     };
+
+    this.blockedRows = new Set();
+    this.blockedColumns = new Set();
 
     this.createCells();
   }
@@ -56,6 +62,7 @@ export class Board {
   }
 
   placeSign(row: number, column: number, sign: Sign): void {
+
     if (!this.isValidPosition(row, column)) {
       throw new Error("Invalid board position");
     }
@@ -66,8 +73,8 @@ export class Board {
       throw new Error("Cell is already occupied");
     }
 
-    if (cell.blocked) {
-      throw new Error("Cell is blocked");
+    if (cell.sign !== null) {
+      throw new Error("Cell is already occupied");
     }
 
     cell.sign = sign;
@@ -263,4 +270,64 @@ export class Board {
   getData(): BoardData {
     return this.data;
   }
+
+  public blockRow(row: number): void {
+    if (row < 0 || row >= this.data.rows) {
+      throw new Error("Invalid row");
+    }
+
+    this.blockedRows.add(row);
+  }
+
+  public blockColumn(column: number): void {
+    if (column < 0 || column >= this.data.columns) {
+      throw new Error("Invalid column");
+    }
+
+    this.blockedColumns.add(column);
+  }
+
+  public isRowBlocked(row: number): boolean {
+    if (row < 0 || row >= this.data.rows) {
+      throw new Error("Invalid row");
+    }
+
+    return this.blockedRows.has(row);
+  }
+
+  public isColumnBlocked(column: number): boolean {
+    if (column < 0 || column >= this.data.columns) {
+      throw new Error("Invalid column");
+    }
+
+    return this.blockedColumns.has(column);
+  }
+
+  public unblockRow(row: number): void {
+    if (row < 0 || row >= this.data.rows) {
+      throw new Error("Invalid row");
+    }
+
+    this.blockedRows.delete(row);
+  }
+
+  public unblockColumn(column: number): void {
+    if (column < 0 || column >= this.data.columns) {
+      throw new Error("Invalid column");
+    }
+
+    this.blockedColumns.delete(column);
+  }
+
+  public unblockCell(
+    row: number,
+    column: number
+  ): void {
+    if (!this.isValidPosition(row, column)) {
+      throw new Error("Invalid board position");
+    }
+
+    this.data.cells[row][column].blocked = false;
+  }
+
 }
