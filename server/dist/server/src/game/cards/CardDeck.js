@@ -6,142 +6,40 @@ const MoveSignVerticalCard_1 = require("./MoveSignVerticalCard");
 const MoveRowColumnCard_1 = require("./MoveRowColumnCard");
 const BlockCellCard_1 = require("./BlockCellCard");
 class CardDeck {
-    cards;
+    cardPool;
     constructor() {
-        this.cards = [
+        this.cardPool = [
             {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-1",
+                card: MoveSignCard_1.moveSignCard,
+                weight: 25,
             },
             {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-1",
+                card: MoveSignVerticalCard_1.moveSignVerticalCard,
+                weight: 20,
             },
             {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-1",
+                card: MoveRowColumnCard_1.moveRowColumnCard,
+                weight: 15,
             },
             {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-1",
+                card: BlockCellCard_1.blockCellCard,
+                weight: 10,
             },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-5",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-6",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-7",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-8",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-9",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-10",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-11",
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: "move-sign-12",
-            },
-            {
-                ...MoveSignVerticalCard_1.moveSignVerticalCard,
-                id: "move-sign-vertical-1",
-            },
-            {
-                ...MoveSignVerticalCard_1.moveSignVerticalCard,
-                id: "move-sign-vertical-2",
-            },
-            {
-                ...MoveSignVerticalCard_1.moveSignVerticalCard,
-                id: "move-sign-vertical-3",
-            },
-            {
-                ...MoveSignVerticalCard_1.moveSignVerticalCard,
-                id: "move-sign-vertical-4",
-            },
-            {
-                ...MoveSignVerticalCard_1.moveSignVerticalCard,
-                id: "move-sign-vertical-5",
-            },
-            {
-                ...MoveRowColumnCard_1.moveRowColumnCard,
-                id: "move-row-column-1",
-            },
-            {
-                ...MoveRowColumnCard_1.moveRowColumnCard,
-                id: "move-row-column-2",
-            },
-            {
-                ...MoveRowColumnCard_1.moveRowColumnCard,
-                id: "move-row-column-3",
-            },
-            {
-                ...MoveRowColumnCard_1.moveRowColumnCard,
-                id: "move-row-column-4",
-            },
-            {
-                ...MoveRowColumnCard_1.moveRowColumnCard,
-                id: "move-row-column-5",
-            },
-            {
-                ...BlockCellCard_1.blockCellCard,
-                id: "block-cell-1",
-            },
-            {
-                ...BlockCellCard_1.blockCellCard,
-                id: "block-cell-2",
-            },
-            {
-                ...BlockCellCard_1.blockCellCard,
-                id: "block-cell-3",
-            },
-            {
-                ...BlockCellCard_1.blockCellCard,
-                id: "block-cell-4",
-            },
-            {
-                ...BlockCellCard_1.blockCellCard,
-                id: "block-cell-5",
-            },
-        ];
-    }
-    resetDeck() {
-        this.cards = [
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: crypto.randomUUID(),
-            },
-            {
-                ...MoveSignCard_1.moveSignCard,
-                id: crypto.randomUUID(),
-            },
-            // more cards later
         ];
     }
     draw() {
-        if (this.cards.length === 0) {
-            this.resetDeck();
+        const totalWeight = this.cardPool.reduce((total, entry) => total + entry.weight, 0);
+        let randomValue = Math.random() * totalWeight;
+        for (const entry of this.cardPool) {
+            randomValue -= entry.weight;
+            if (randomValue < 0) {
+                return {
+                    ...entry.card,
+                    id: crypto.randomUUID(),
+                };
+            }
         }
-        const randomIndex = Math.floor(Math.random() * this.cards.length);
-        const [card] = this.cards.splice(randomIndex, 1);
-        return card;
-    }
-    getRemainingCards() {
-        return this.cards.length;
+        throw new Error("Failed to draw card");
     }
 }
 exports.CardDeck = CardDeck;

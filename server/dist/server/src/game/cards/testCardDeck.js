@@ -1,13 +1,22 @@
 "use strict";
+// import { CardDeck } from "./CardDeck";
 Object.defineProperty(exports, "__esModule", { value: true });
-const CardDeck_1 = require("./CardDeck");
-const deck = new CardDeck_1.CardDeck();
-console.log("Cards in deck:", deck.getRemainingCards());
-const card1 = deck.draw();
-console.log("Drawn card 1:");
-console.dir(card1, { depth: null });
-console.log("Cards remaining:", deck.getRemainingCards());
-const card2 = deck.draw();
-console.log("Drawn card 2:");
-console.dir(card2, { depth: null });
-console.log("Cards remaining:", deck.getRemainingCards());
+// const deck = new CardDeck();
+// console.log(
+//   "Cards in deck:",
+//   deck.getRemainingCards()
+// );
+// const card1 = deck.draw();
+// console.log("Drawn card 1:");
+// console.dir(card1, { depth: null });
+// console.log(
+//   "Cards remaining:",
+//   deck.getRemainingCards()
+// );
+// const card2 = deck.draw();
+// console.log("Drawn card 2:");
+// console.dir(card2, { depth: null });
+// console.log(
+//   "Cards remaining:",
+//   deck.getRemainingCards()
+// );
