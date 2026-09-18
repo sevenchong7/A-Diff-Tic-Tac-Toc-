@@ -1,3 +1,4 @@
+import { Card } from "./cards/Card";
 import { Board } from "./Board";
 import { WinRule } from "./rules/WinRule";
 import {
@@ -18,6 +19,8 @@ import { moveSignVerticalEffect } from "./cards/effects/MoveSignVerticalEffect";
 import { moveRowColumnEffect } from "./cards/effects/MoveRowColumnEffect";
 import { blockCellEffect } from "./cards/effects/BlockCellEffect";
 import { opponentSkillLockEffect } from "./cards/effects/opponentSkillLockEffect";
+import { increaseOpponentWinRequirementEffect } from "./cards/effects/increaseOpponentWinRequirementEffect";
+import { DecreaseOwnWinRequirementEffect } from "./cards/effects/DecreaseOwnWinRequirementEffect";
 
 interface GamePlayer {
   id: string;
@@ -25,6 +28,7 @@ interface GamePlayer {
   cardManager: CardManager;
   doubleSkillActivationsRemaining: number;
   doubleDrawActivationsRemaining: number;
+  winRequirement: number;
 }
 
 interface BlockedLine {
@@ -118,6 +122,7 @@ export class Game {
         cardManager: new CardManager(),
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
+        winRequirement: 3,
       },
       {
         id: player2Id,
@@ -125,6 +130,7 @@ export class Game {
         cardManager: new CardManager(),
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
+        winRequirement: 3,
       },
     ];
 
@@ -236,7 +242,7 @@ export class Game {
     const hasWon = WinRule.hasWon(
       this.board,
       currentPlayer.sign,
-      this.winRequirement
+      currentPlayer.winRequirement
     );
 
     if (hasWon) {
@@ -345,6 +351,19 @@ export class Game {
     return player.cardManager.getHand();
   }
 
+  public getPlayerWinRequirement(playerId: string): number {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    return player.winRequirement;
+  }
+
+
   public startTurn(): void {
     if (this.status !== "PLAYING") {
       throw new Error("Game is not currently playing");
@@ -417,7 +436,10 @@ export class Game {
       card.type !== "MOVE_SIGN_VERTICAL" &&
       card.type !== "MOVE_ROW_COLUMN" &&
       card.type !== "BLOCK_CELL" &&
-      card.type !== "OPPONENT_SKILL_LOCK"
+      card.type !== "OPPONENT_SKILL_LOCK" &&
+      card.type !== "INCREASE_OPPONENT_WIN_REQUIREMENT" &&
+      card.type !== "DECREASE_OWN_WIN_REQUIREMENT" &&
+      card.type !== "ADD_ROW_COLUMN"
     ) {
       throw new Error("This card cannot be used here");
     }
@@ -555,6 +577,27 @@ export class Game {
       );
     }
 
+    if (card.type === "ADD_ROW_COLUMN") {
+      if (
+        action.lineType === undefined ||
+        action.position === undefined
+      ) {
+        throw new Error(
+          "Line type and position are required"
+        );
+      }
+
+      if (action.lineType === "row") {
+        this.board.addRow(action.position);
+      } else if (action.lineType === "column") {
+        this.board.addColumn(action.position);
+      } else {
+        throw new Error(
+          "Line type must be row or column"
+        );
+      }
+    }
+
     if (card.type === "OPPONENT_SKILL_LOCK") {
       const opponent = this.players.find(
         (player) => player.id !== currentPlayer.id
@@ -567,6 +610,40 @@ export class Game {
       opponentSkillLockEffect();
 
       this.lockPlayerFromSkills(opponent.id);
+    }
+
+    if (card.type === "INCREASE_OPPONENT_WIN_REQUIREMENT") {
+      const opponent = this.players.find(
+        (player) => player.id !== currentPlayer.id
+      );
+
+      if (!opponent) {
+        throw new Error("Opponent not found");
+      }
+
+      if (opponent.winRequirement >= 7) {
+        throw new Error(
+          "Opponent win requirement is already at maximum"
+        );
+      }
+
+      opponent.winRequirement =
+        increaseOpponentWinRequirementEffect(
+          opponent.winRequirement
+        );
+    }
+
+    if (card.type === "DECREASE_OWN_WIN_REQUIREMENT") {
+      if (currentPlayer.winRequirement <= 3) {
+        throw new Error(
+          "Your win requirement is already at minimum"
+        );
+      }
+
+      currentPlayer.winRequirement =
+        DecreaseOwnWinRequirementEffect(
+          currentPlayer.winRequirement
+        );
     }
 
     currentPlayer.cardManager.removeCard(cardId);
@@ -809,5 +886,21 @@ export class Game {
   private isPlayerSkillLocked(playerId: string): boolean {
     return this.skillLockedPlayerIds.has(playerId);
   }
+
+  public addCardToPlayer(
+    playerId: string,
+    card: Card
+  ): void {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    player.cardManager.addCard(card);
+  }
+
 
 }

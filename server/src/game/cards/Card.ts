@@ -4,6 +4,9 @@ export type CardType =
   | "MOVE_ROW_COLUMN"
   | "BLOCK_CELL"
   | "OPPONENT_SKILL_LOCK"
+  | "INCREASE_OPPONENT_WIN_REQUIREMENT"
+  | "ADD_ROW_COLUMN"
+  | "DECREASE_OWN_WIN_REQUIREMENT"
   ;
 
 export interface Card {

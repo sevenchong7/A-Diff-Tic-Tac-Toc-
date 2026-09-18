@@ -4,6 +4,9 @@ import { moveSignVerticalCard } from "./MoveSignVerticalCard";
 import { moveRowColumnCard } from "./MoveRowColumnCard";
 import { blockCellCard } from "./BlockCellCard";
 import { opponentSkillLockCard } from "./OpponentSkillLockCard";
+import { increaseOpponentWinRequirementCard } from "./IncreaseOpponentWinRequirementCard";
+import { decreaseOwnWinRequirementCard } from "./DecreaseOwnWinRequirementCard";
+import { addRowColumnCard } from "./AddRowColumnCard";
 
 interface WeightedCard {
   card: Card;
@@ -13,24 +16,36 @@ interface WeightedCard {
 const CARD_POOL: WeightedCard[] = [
   {
     card: moveSignCard,
-    weight: 15,
+    weight: 1,
   },
   {
     card: moveSignVerticalCard,
-    weight: 10,
+    weight: 1,
   },
   {
     card: moveRowColumnCard,
-    weight: 15,
+    weight: 1,
   },
   {
     card: blockCellCard,
-    weight: 10,
+    weight: 1,
   },
   {
     card: opponentSkillLockCard,
-    weight: 90,
+    weight: 1,
   },
+  {
+    card: increaseOpponentWinRequirementCard,
+    weight: 40,
+  },
+  {
+    card: decreaseOwnWinRequirementCard,
+    weight: 40,
+  },
+  {
+    card: addRowColumnCard,
+    weight: 1,
+  }
 ];
 
 export class CardDeck {

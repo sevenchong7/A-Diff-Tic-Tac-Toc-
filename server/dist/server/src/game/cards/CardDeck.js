@@ -6,27 +6,37 @@ const MoveSignVerticalCard_1 = require("./MoveSignVerticalCard");
 const MoveRowColumnCard_1 = require("./MoveRowColumnCard");
 const BlockCellCard_1 = require("./BlockCellCard");
 const OpponentSkillLockCard_1 = require("./OpponentSkillLockCard");
+const IncreaseOpponentWinRequirementCard_1 = require("./IncreaseOpponentWinRequirementCard");
+const AddRowColumnCard_1 = require("./AddRowColumnCard");
 const CARD_POOL = [
     {
         card: MoveSignCard_1.moveSignCard,
-        weight: 25,
+        weight: 1,
     },
     {
         card: MoveSignVerticalCard_1.moveSignVerticalCard,
-        weight: 20,
+        weight: 1,
     },
     {
         card: MoveRowColumnCard_1.moveRowColumnCard,
-        weight: 15,
+        weight: 1,
     },
     {
         card: BlockCellCard_1.blockCellCard,
-        weight: 10,
+        weight: 1,
     },
     {
         card: OpponentSkillLockCard_1.opponentSkillLockCard,
-        weight: 10,
+        weight: 1,
     },
+    {
+        card: IncreaseOpponentWinRequirementCard_1.increaseOpponentWinRequirementCard,
+        weight: 1,
+    },
+    {
+        card: AddRowColumnCard_1.addRowColumnCard,
+        weight: 90,
+    }
 ];
 class CardDeck {
     draw() {
