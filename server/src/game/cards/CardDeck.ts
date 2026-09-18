@@ -3,6 +3,7 @@ import { moveSignCard } from "./MoveSignCard";
 import { moveSignVerticalCard } from "./MoveSignVerticalCard";
 import { moveRowColumnCard } from "./MoveRowColumnCard";
 import { blockCellCard } from "./BlockCellCard";
+import { opponentSkillLockCard } from "./OpponentSkillLockCard";
 
 interface WeightedCard {
   card: Card;
@@ -12,11 +13,11 @@ interface WeightedCard {
 const CARD_POOL: WeightedCard[] = [
   {
     card: moveSignCard,
-    weight: 25,
+    weight: 15,
   },
   {
     card: moveSignVerticalCard,
-    weight: 20,
+    weight: 10,
   },
   {
     card: moveRowColumnCard,
@@ -25,6 +26,10 @@ const CARD_POOL: WeightedCard[] = [
   {
     card: blockCellCard,
     weight: 10,
+  },
+  {
+    card: opponentSkillLockCard,
+    weight: 90,
   },
 ];
 

@@ -17,6 +17,7 @@ import { moveSignEffect } from "./cards/effects/MoveSignEffect";
 import { moveSignVerticalEffect } from "./cards/effects/MoveSignVerticalEffect";
 import { moveRowColumnEffect } from "./cards/effects/MoveRowColumnEffect";
 import { blockCellEffect } from "./cards/effects/BlockCellEffect";
+import { opponentSkillLockEffect } from "./cards/effects/opponentSkillLockEffect";
 
 interface GamePlayer {
   id: string;
@@ -56,6 +57,8 @@ export class Game {
   private blockedLines: BlockedLine[];
 
   private blockedCells: BlockedCell[];
+
+  private skillLockedPlayerIds: Set<string>;
 
   private status: "PLAYING" | "FINISHED" | "DRAW";
 
@@ -143,6 +146,8 @@ export class Game {
 
     this.doubleDrawActive = false;
 
+    this.skillLockedPlayerIds = new Set();
+
     this.status = "PLAYING";
 
     this.winRequirement = winRequirement;
@@ -160,20 +165,21 @@ export class Game {
       this.currentPlayerIndex === 0 ? 1 : 0;
 
     this.startTurn();
+
   }
 
- private isBoardFull(): boolean {
-  const board = this.board.getData();
+  private isBoardFull(): boolean {
+    const board = this.board.getData();
 
-  for (const row of board.cells) {
-    for (const cell of row) {
-      if (cell.sign === null) {
-        return false;
+    for (const row of board.cells) {
+      for (const cell of row) {
+        if (cell.sign === null) {
+          return false;
+        }
       }
     }
-  }
 
-  return true;
+    return true;
   }
 
   public placeSign(
@@ -376,6 +382,12 @@ export class Game {
       );
     }
 
+    if (this.isPlayerSkillLocked(playerId)) {
+      throw new Error(
+        "You cannot use Skill Cards during this turn"
+      );
+    }
+
     const maxSkillCardsThisTurn =
       this.doubleSkillActive ? 2 : 1;
 
@@ -404,7 +416,8 @@ export class Game {
       card.type !== "MOVE_SIGN_HORIZONTAL" &&
       card.type !== "MOVE_SIGN_VERTICAL" &&
       card.type !== "MOVE_ROW_COLUMN" &&
-      card.type !== "BLOCK_CELL"
+      card.type !== "BLOCK_CELL" &&
+      card.type !== "OPPONENT_SKILL_LOCK"
     ) {
       throw new Error("This card cannot be used here");
     }
@@ -540,6 +553,20 @@ export class Game {
         action.column,
         playerId
       );
+    }
+
+    if (card.type === "OPPONENT_SKILL_LOCK") {
+      const opponent = this.players.find(
+        (player) => player.id !== currentPlayer.id
+      );
+
+      if (!opponent) {
+        throw new Error("Opponent not found");
+      }
+
+      opponentSkillLockEffect();
+
+      this.lockPlayerFromSkills(opponent.id);
     }
 
     currentPlayer.cardManager.removeCard(cardId);
@@ -745,6 +772,8 @@ export class Game {
         return true;
       }
     );
+
+    this.skillLockedPlayerIds.delete(playerId);
   }
 
   private addBlockedCell(
@@ -771,6 +800,14 @@ export class Game {
         blockedCell.column === column &&
         blockedCell.blockedByPlayerId !== playerId
     );
+  }
+
+  private lockPlayerFromSkills(playerId: string): void {
+    this.skillLockedPlayerIds.add(playerId);
+  }
+
+  private isPlayerSkillLocked(playerId: string): boolean {
+    return this.skillLockedPlayerIds.has(playerId);
   }
 
 }
