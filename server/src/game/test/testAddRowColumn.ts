@@ -1,5 +1,5 @@
-import { Game } from "./Game";
-import { addRowColumnCard } from "../game/cards/AddRowColumnCard";
+import { Game } from "../Game";
+import { addRowColumnCard } from "../../game/cards/AddRowColumnCard";
 
 const game = new Game(
   "player1",

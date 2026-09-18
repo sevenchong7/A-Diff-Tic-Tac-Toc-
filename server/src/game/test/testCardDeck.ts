@@ -1,4 +1,4 @@
-import { CardDeck } from "./cards/CardDeck";
+import { CardDeck } from "../cards/CardDeck";
 
 const deck = new CardDeck();
 

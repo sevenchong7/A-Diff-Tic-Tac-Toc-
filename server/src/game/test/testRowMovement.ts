@@ -16,7 +16,7 @@
 // console.dir(board.getData(), { depth: null });
 
 
-import { Board } from "./Board";
+import { Board } from "../Board";
 
 const board = new Board(3, 3);
 

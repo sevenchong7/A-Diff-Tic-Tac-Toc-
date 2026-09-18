@@ -1,5 +1,5 @@
-import { Board } from "./Board";
-import { WinRule } from "./rules/WinRule";
+import { Board } from "../Board";
+import { WinRule } from "../rules/WinRule";
 
 const board = new Board(3, 3);
 

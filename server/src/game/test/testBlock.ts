@@ -1,5 +1,5 @@
-import { Game } from "./Game";
-import { Board } from "./Board";
+import { Game } from "../Game";
+import { Board } from "../Board";
 
 const game = new Game(
   "player1",

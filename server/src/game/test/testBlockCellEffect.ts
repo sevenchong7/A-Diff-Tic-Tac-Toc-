@@ -1,5 +1,5 @@
-import { Board } from "./Board";
-import { blockCellEffect } from "./cards/effects/BlockCellEffect";
+import { Board } from "../Board";
+import { blockCellEffect } from "../cards/effects/BlockCellEffect";
 
 const board = new Board(3, 3);
 
