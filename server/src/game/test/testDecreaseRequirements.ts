@@ -21,20 +21,43 @@ console.log(
 const player1Hand = game.getPlayerHand("player1");
 const player2Hand = game.getPlayerHand("player2");
 
+// const card = player1Hand.find(
+//   (card) =>
+//     card.type ===
+//     "INCREASE_OPPONENT_WIN_REQUIREMENT"
+// );
+
+// if (!card) {
+//   throw new Error(
+//     "Increase Requirement card not found"
+//   );
+// }
+
+// console.log(
+//   "\nPlayer 1 uses Increase Requirement"
+// );
+
+// game.useCard(
+//   "player1",
+//   card.id,
+//   {}
+// );
+
+
 const card = player1Hand.find(
   (card) =>
     card.type ===
-    "INCREASE_OPPONENT_WIN_REQUIREMENT"
+    "DECREASE_OWN_WIN_REQUIREMENT"
 );
 
 if (!card) {
   throw new Error(
-    "Increase Requirement card not found"
+    "Decrease Requirement card not found"
   );
 }
 
 console.log(
-  "\nPlayer 1 uses Increase Requirement"
+  "\nPlayer 1 uses Decrease Requirement"
 );
 
 game.useCard(
@@ -42,6 +65,7 @@ game.useCard(
   card.id,
   {}
 );
+
 
 console.log(
   "Player 1 requirement:",

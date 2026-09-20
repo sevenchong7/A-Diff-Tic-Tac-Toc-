@@ -12,6 +12,9 @@ const MoveRowColumnEffect_1 = require("./cards/effects/MoveRowColumnEffect");
 const BlockCellEffect_1 = require("./cards/effects/BlockCellEffect");
 const opponentSkillLockEffect_1 = require("./cards/effects/opponentSkillLockEffect");
 const increaseOpponentWinRequirementEffect_1 = require("./cards/effects/increaseOpponentWinRequirementEffect");
+const DecreaseOwnWinRequirementEffect_1 = require("./cards/effects/DecreaseOwnWinRequirementEffect");
+const removeOpponentSignEffect_1 = require("./cards/effects/removeOpponentSignEffect");
+const removeRowColumnEffect_1 = require("./cards/effects/removeRowColumnEffect");
 class Game {
     board;
     players;
@@ -220,7 +223,10 @@ class Game {
             card.type !== "BLOCK_CELL" &&
             card.type !== "OPPONENT_SKILL_LOCK" &&
             card.type !== "INCREASE_OPPONENT_WIN_REQUIREMENT" &&
-            card.type !== "ADD_ROW_COLUMN") {
+            card.type !== "DECREASE_OWN_WIN_REQUIREMENT" &&
+            card.type !== "ADD_ROW_COLUMN" &&
+            card.type !== "REMOVE_ROW_COLUMN" &&
+            card.type !== "REMOVE_OPPONENT_SIGN") {
             throw new Error("This card cannot be used here");
         }
         if (card.type === "MOVE_SIGN_HORIZONTAL") {
@@ -292,6 +298,21 @@ class Game {
                 throw new Error("Line type must be row or column");
             }
         }
+        if (card.type === "REMOVE_ROW_COLUMN") {
+            if (action.lineType === undefined ||
+                action.position === undefined) {
+                throw new Error("Line type and position are required");
+            }
+            if (action.lineType === "row") {
+                (0, removeRowColumnEffect_1.removeRowColumnEffect)(this.board, "row", action.position);
+            }
+            else if (action.lineType === "column") {
+                (0, removeRowColumnEffect_1.removeRowColumnEffect)(this.board, "column", action.position);
+            }
+            else {
+                throw new Error("Line type must be row or column");
+            }
+        }
         if (card.type === "OPPONENT_SKILL_LOCK") {
             const opponent = this.players.find((player) => player.id !== currentPlayer.id);
             if (!opponent) {
@@ -310,6 +331,27 @@ class Game {
             }
             opponent.winRequirement =
                 (0, increaseOpponentWinRequirementEffect_1.increaseOpponentWinRequirementEffect)(opponent.winRequirement);
+        }
+        if (card.type === "DECREASE_OWN_WIN_REQUIREMENT") {
+            if (currentPlayer.winRequirement <= 3) {
+                throw new Error("Your win requirement is already at minimum");
+            }
+            currentPlayer.winRequirement =
+                (0, DecreaseOwnWinRequirementEffect_1.decreaseOwnWinRequirementEffect)(currentPlayer.winRequirement);
+        }
+        if (card.type === "REMOVE_OPPONENT_SIGN") {
+            if (action.row === undefined ||
+                action.column === undefined) {
+                throw new Error("Row and column are required");
+            }
+            const targetCell = this.board.getCell(action.row, action.column);
+            if (targetCell.sign === null) {
+                throw new Error("There is no sign to remove");
+            }
+            if (targetCell.sign === currentPlayer.sign) {
+                throw new Error("You cannot remove your own sign");
+            }
+            (0, removeOpponentSignEffect_1.removeOpponentSignEffect)(this.board, action.row, action.column);
         }
         currentPlayer.cardManager.removeCard(cardId);
         this.skillCardsUsedThisTurn++;

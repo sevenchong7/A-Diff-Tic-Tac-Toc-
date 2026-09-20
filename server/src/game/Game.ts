@@ -20,7 +20,9 @@ import { moveRowColumnEffect } from "./cards/effects/MoveRowColumnEffect";
 import { blockCellEffect } from "./cards/effects/BlockCellEffect";
 import { opponentSkillLockEffect } from "./cards/effects/opponentSkillLockEffect";
 import { increaseOpponentWinRequirementEffect } from "./cards/effects/increaseOpponentWinRequirementEffect";
-import { DecreaseOwnWinRequirementEffect } from "./cards/effects/DecreaseOwnWinRequirementEffect";
+import { decreaseOwnWinRequirementEffect } from "./cards/effects/DecreaseOwnWinRequirementEffect";
+import { removeOpponentSignEffect } from "./cards/effects/removeOpponentSignEffect";
+import { removeRowColumnEffect } from "./cards/effects/removeRowColumnEffect";
 
 interface GamePlayer {
   id: string;
@@ -439,7 +441,9 @@ export class Game {
       card.type !== "OPPONENT_SKILL_LOCK" &&
       card.type !== "INCREASE_OPPONENT_WIN_REQUIREMENT" &&
       card.type !== "DECREASE_OWN_WIN_REQUIREMENT" &&
-      card.type !== "ADD_ROW_COLUMN"
+      card.type !== "ADD_ROW_COLUMN" &&
+      card.type !== "REMOVE_ROW_COLUMN" &&
+      card.type !== "REMOVE_OPPONENT_SIGN"
     ) {
       throw new Error("This card cannot be used here");
     }
@@ -598,6 +602,35 @@ export class Game {
       }
     }
 
+    if (card.type === "REMOVE_ROW_COLUMN") {
+      if (
+        action.lineType === undefined ||
+        action.position === undefined
+      ) {
+        throw new Error(
+          "Line type and position are required"
+        );
+      }
+
+      if (action.lineType === "row") {
+        removeRowColumnEffect(
+          this.board,
+          "row",
+          action.position
+        );
+      } else if (action.lineType === "column") {
+        removeRowColumnEffect(
+          this.board,
+          "column",
+          action.position
+        );
+      } else {
+        throw new Error(
+          "Line type must be row or column"
+        );
+      }
+    }
+
     if (card.type === "OPPONENT_SKILL_LOCK") {
       const opponent = this.players.find(
         (player) => player.id !== currentPlayer.id
@@ -641,9 +674,41 @@ export class Game {
       }
 
       currentPlayer.winRequirement =
-        DecreaseOwnWinRequirementEffect(
+        decreaseOwnWinRequirementEffect(
           currentPlayer.winRequirement
         );
+    }
+
+    if (card.type === "REMOVE_OPPONENT_SIGN") {
+      if (
+        action.row === undefined ||
+        action.column === undefined
+      ) {
+        throw new Error("Row and column are required");
+      }
+
+      const targetCell = this.board.getCell(
+        action.row,
+        action.column
+      );
+
+      if (targetCell.sign === null) {
+        throw new Error(
+          "There is no sign to remove"
+        );
+      }
+
+      if (targetCell.sign === currentPlayer.sign) {
+        throw new Error(
+          "You cannot remove your own sign"
+        );
+      }
+
+      removeOpponentSignEffect(
+        this.board,
+        action.row,
+        action.column
+      );
     }
 
     currentPlayer.cardManager.removeCard(cardId);

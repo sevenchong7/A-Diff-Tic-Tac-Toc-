@@ -6,7 +6,9 @@ export type CardType =
   | "OPPONENT_SKILL_LOCK"
   | "INCREASE_OPPONENT_WIN_REQUIREMENT"
   | "ADD_ROW_COLUMN"
+  | "REMOVE_ROW_COLUMN"
   | "DECREASE_OWN_WIN_REQUIREMENT"
+  | "REMOVE_OPPONENT_SIGN"
   ;
 
 export interface Card {
