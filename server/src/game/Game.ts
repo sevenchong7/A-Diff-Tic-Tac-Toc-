@@ -12,6 +12,7 @@ import {
 import { CardManager } from "./cards/CardManager";
 import { CardDeck } from "./cards/CardDeck";
 import type { CardAction } from "./cards/CardAction";
+import type { CharacterType } from "./characters/CharacterType";
 
 
 import { moveSignEffect } from "./cards/effects/MoveSignEffect";
@@ -27,9 +28,11 @@ import { removeRowColumnEffect } from "./cards/effects/removeRowColumnEffect";
 interface GamePlayer {
   id: string;
   sign: "X" | "O";
+  character: CharacterType | null;
   cardManager: CardManager;
   doubleSkillActivationsRemaining: number;
   doubleDrawActivationsRemaining: number;
+  doublePlacementActivationsRemaining: number;
   winRequirement: number;
 }
 
@@ -60,13 +63,21 @@ export class Game {
 
   private doubleDrawActive: boolean;
 
+  private doublePlacementActive: boolean;
+
+  private placementsRemaining: number;
+
   private blockedLines: BlockedLine[];
 
   private blockedCells: BlockedCell[];
 
   private skillLockedPlayerIds: Set<string>;
 
-  private status: "PLAYING" | "FINISHED" | "DRAW";
+  private status:
+    | "CHARACTER_SELECT"
+    | "PLAYING"
+    | "FINISHED"
+    | "DRAW";
 
   private winRequirement: number;
 
@@ -121,17 +132,21 @@ export class Game {
       {
         id: player1Id,
         sign: "X",
+        character: null,
         cardManager: new CardManager(),
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
+        doublePlacementActivationsRemaining: 1,
         winRequirement: 3,
       },
       {
         id: player2Id,
         sign: "O",
+        character: null,
         cardManager: new CardManager(),
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
+        doublePlacementActivationsRemaining: 1,
         winRequirement: 3,
       },
     ];
@@ -154,13 +169,17 @@ export class Game {
 
     this.doubleDrawActive = false;
 
+    this.doublePlacementActive = false;
+
+    this.placementsRemaining = 1;
+
     this.skillLockedPlayerIds = new Set();
 
-    this.status = "PLAYING";
+    this.status = "CHARACTER_SELECT";
 
     this.winRequirement = winRequirement;
 
-    this.startTurn();
+    // this.startTurn();
   }
 
   private switchTurn(): void {
@@ -265,6 +284,17 @@ export class Game {
       return;
     }
 
+    if (this.doublePlacementActive) {
+      this.placementsRemaining--;
+
+      if (this.placementsRemaining > 0) {
+        return;
+      }
+
+      this.doublePlacementActive = false;
+      this.placementsRemaining = 1;
+    }
+
     this.switchTurn();
   }
 
@@ -276,7 +306,7 @@ export class Game {
     return this.players[this.currentPlayerIndex];
   }
 
-  public getStatus(): "PLAYING" | "FINISHED" | "DRAW" {
+  public getStatus(): "CHARACTER_SELECT" | "PLAYING" | "FINISHED" | "DRAW" {
     return this.status;
   }
 
@@ -374,6 +404,8 @@ export class Game {
     this.skillCardsUsedThisTurn = 0;
     this.doubleSkillActive = false;
     this.doubleDrawActive = false;
+    this.doublePlacementActive = false;
+    this.placementsRemaining = 1;
 
     const currentPlayer =
       this.players[this.currentPlayerIndex];
@@ -719,7 +751,7 @@ export class Game {
       WinRule.hasWon(
         this.board,
         currentPlayer.sign,
-        this.winRequirement
+        currentPlayer.winRequirement
       )
     ) {
       this.status = "FINISHED";
@@ -965,6 +997,129 @@ export class Game {
     }
 
     player.cardManager.addCard(card);
+  }
+
+  public getPlayerCharacter(
+    playerId: string
+  ): CharacterType {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    if (player.character === null) {
+      throw new Error("Character not selected yet");
+    }
+
+    return player.character;
+  }
+
+  public selectCharacter(
+    playerId: string,
+    character: CharacterType
+  ): void {
+    if (this.status !== "CHARACTER_SELECT") {
+      throw new Error(
+        "Character selection is not currently active"
+      );
+    }
+
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    if (player.character !== null) {
+      throw new Error(
+        "Character has already been selected"
+      );
+    }
+
+    player.character = character;
+
+    const allPlayersSelected = this.players.every(
+      (player) => player.character !== null
+    );
+
+    if (allPlayersSelected) {
+      const hasStart5x5Character = this.players.some(
+        (player) => player.character === "START_5X5"
+      );
+
+      if (hasStart5x5Character) {
+        this.board = new Board(5, 5);
+      }
+
+      this.status = "PLAYING";
+      this.startTurn();
+    }
+  }
+
+  public getDoublePlacementActivationsRemaining(
+    playerId: string
+  ): number {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    return player.doublePlacementActivationsRemaining;
+  }
+
+  public activateDoublePlacement(
+    playerId: string
+  ): void {
+    if (this.status !== "PLAYING") {
+      throw new Error(
+        "Game is not currently playing"
+      );
+    }
+
+    const currentPlayer =
+      this.players[this.currentPlayerIndex];
+
+    if (currentPlayer.id !== playerId) {
+      throw new Error("It is not your turn");
+    }
+
+    if (currentPlayer.character !== "DOUBLE_PLACEMENT") {
+      throw new Error(
+        "This character does not have Double Placement"
+      );
+    }
+
+    if (
+      currentPlayer.doublePlacementActivationsRemaining <= 0
+    ) {
+      throw new Error(
+        "No Double Placement activations remaining"
+      );
+    }
+
+    if (this.doublePlacementActive) {
+      throw new Error(
+        "Double Placement is already active"
+      );
+    }
+
+    this.doublePlacementActive = true;
+
+    this.placementsRemaining = 2;
+
+    currentPlayer.doublePlacementActivationsRemaining--;
+  }
+
+  public getPlacementsRemaining(): number {
+    return this.placementsRemaining;
   }
 
 

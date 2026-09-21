@@ -23,6 +23,8 @@ class Game {
     skillCardsUsedThisTurn;
     doubleSkillActive;
     doubleDrawActive;
+    doublePlacementActive;
+    placementsRemaining;
     blockedLines;
     blockedCells;
     skillLockedPlayerIds;
@@ -51,6 +53,7 @@ class Game {
             {
                 id: player1Id,
                 sign: "X",
+                character: null,
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
@@ -59,6 +62,7 @@ class Game {
             {
                 id: player2Id,
                 sign: "O",
+                character: null,
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
@@ -76,10 +80,12 @@ class Game {
         this.skillCardsUsedThisTurn = 0;
         this.doubleSkillActive = false;
         this.doubleDrawActive = false;
+        this.doublePlacementActive = false;
+        this.placementsRemaining = 1;
         this.skillLockedPlayerIds = new Set();
-        this.status = "PLAYING";
+        this.status = "CHARACTER_SELECT";
         this.winRequirement = winRequirement;
-        this.startTurn();
+        // this.startTurn();
     }
     switchTurn() {
         const endingPlayer = this.players[this.currentPlayerIndex];
@@ -190,6 +196,8 @@ class Game {
         this.skillCardsUsedThisTurn = 0;
         this.doubleSkillActive = false;
         this.doubleDrawActive = false;
+        this.doublePlacementActive = false;
+        this.placementsRemaining = 1;
         const currentPlayer = this.players[this.currentPlayerIndex];
         currentPlayer.cardManager.drawCard(this.deck);
     }
@@ -355,7 +363,7 @@ class Game {
         }
         currentPlayer.cardManager.removeCard(cardId);
         this.skillCardsUsedThisTurn++;
-        if (WinRule_1.WinRule.hasWon(this.board, currentPlayer.sign, this.winRequirement)) {
+        if (WinRule_1.WinRule.hasWon(this.board, currentPlayer.sign, currentPlayer.winRequirement)) {
             this.status = "FINISHED";
             console.log(`${currentPlayer.id} wins!`);
             return;
@@ -487,6 +495,29 @@ class Game {
             throw new Error("Player not found");
         }
         player.cardManager.addCard(card);
+    }
+    getPlayerCharacter(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        if (player.character === null) {
+            throw new Error("Character not selected yet");
+        }
+        return player.character;
+    }
+    selectCharacter(playerId, character) {
+        if (this.status !== "CHARACTER_SELECT") {
+            throw new Error("Character selection is not currently active");
+        }
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        if (player.character !== null) {
+            throw new Error("Character has already been selected");
+        }
+        player.character = character;
     }
 }
 exports.Game = Game;

@@ -1,0 +1,8 @@
+export type CharacterType =
+  | "DOUBLE_SKILL"
+  | "DOUBLE_DRAW"
+  | "BLOCK_LINE"
+  | "CHANGE_OPPONENT_WIN_RULE"
+  | "START_5X5"
+  | "OPPONENT_5_SEC"
+  | "DOUBLE_PLACEMENT";

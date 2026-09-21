@@ -4,18 +4,20 @@ import { removeRowColumnCard } from "../cards/RemoveRowColumnCard";
 const game = new Game(
   "player1",
   "player2",
-  4,
-  4,
+  3,
+  3,
   3
 );
 
-game.addCardToPlayer(
-  "player1",
-  removeRowColumnCard
-);
+// game.addCardToPlayer(
+//   "player1",
+//   removeRowColumnCard
+// );
 
 console.log("Initial board:");
 console.log(game.getBoard().getData());
+
+console.log(game.getPlayerHand("player1"));
 
 const card = game
   .getPlayerHand("player1")
@@ -32,6 +34,8 @@ if (!card) {
 
 console.log("\nPlayer 1 removes row 1");
 
+try {
+
 game.useCard(
   "player1",
   card.id,
@@ -40,6 +44,12 @@ game.useCard(
     position: 1,
   }
 );
+
+}catch (error) {
+  console.error("Error using card:", error);
+}
+
+console.log(game.getPlayerHand("player1"));
 
 console.log(
   "Board after removing row:",
