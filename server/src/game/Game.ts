@@ -8,12 +8,13 @@ import {
   MAX_BOARD_COLUMNS,
   MIN_WIN_REQUIREMENT,
   MAX_WIN_REQUIREMENT,
+  DEFAULT_TURN_TIME_MS,
+  OPPONENT_5_SEC_TIME_MS
 } from "./constants";
 import { CardManager } from "./cards/CardManager";
 import { CardDeck } from "./cards/CardDeck";
 import type { CardAction } from "./cards/CardAction";
 import type { CharacterType } from "./characters/CharacterType";
-
 
 import { moveSignEffect } from "./cards/effects/MoveSignEffect";
 import { moveSignVerticalEffect } from "./cards/effects/MoveSignVerticalEffect";
@@ -24,6 +25,7 @@ import { increaseOpponentWinRequirementEffect } from "./cards/effects/increaseOp
 import { decreaseOwnWinRequirementEffect } from "./cards/effects/DecreaseOwnWinRequirementEffect";
 import { removeOpponentSignEffect } from "./cards/effects/removeOpponentSignEffect";
 import { removeRowColumnEffect } from "./cards/effects/removeRowColumnEffect";
+
 
 interface GamePlayer {
   id: string;
@@ -66,6 +68,8 @@ export class Game {
   private doublePlacementActive: boolean;
 
   private placementsRemaining: number;
+
+  private turnTimer: ReturnType<typeof setTimeout> | null = null;
 
   private blockedLines: BlockedLine[];
 
@@ -183,8 +187,13 @@ export class Game {
   }
 
   private switchTurn(): void {
-    const endingPlayer =
-      this.players[this.currentPlayerIndex];
+
+    if (this.turnTimer !== null) {
+      clearTimeout(this.turnTimer);
+      this.turnTimer = null;
+    }
+
+    const endingPlayer = this.players[this.currentPlayerIndex];
 
     this.updateBlockedLines(endingPlayer.id);
 
@@ -395,10 +404,14 @@ export class Game {
     return player.winRequirement;
   }
 
-
   public startTurn(): void {
     if (this.status !== "PLAYING") {
       throw new Error("Game is not currently playing");
+    }
+
+    if (this.turnTimer !== null) {
+      clearTimeout(this.turnTimer);
+      this.turnTimer = null;
     }
 
     this.skillCardsUsedThisTurn = 0;
@@ -407,10 +420,28 @@ export class Game {
     this.doublePlacementActive = false;
     this.placementsRemaining = 1;
 
-    const currentPlayer =
-      this.players[this.currentPlayerIndex];
+    const currentPlayer = this.players[this.currentPlayerIndex];
 
     currentPlayer.cardManager.drawCard(this.deck);
+
+    const turnTime = this.getCurrentTurnTimeLimit();
+
+    this.turnTimer = setTimeout(() => {
+      if (this.status !== "PLAYING") {
+        return;
+      }
+
+      this.turnTimer = null;
+
+      const currentPlayerAtTimeout =
+        this.players[this.currentPlayerIndex];
+
+      console.log(
+        `Player ${currentPlayerAtTimeout.id}'s turn timed out`
+      );
+
+      this.switchTurn();
+    }, turnTime);
   }
 
   public useCard(
@@ -776,6 +807,12 @@ export class Game {
       throw new Error("It is not your turn");
     }
 
+    if (!this.playerHasCharacter(playerId, "DOUBLE_SKILL")) {
+      throw new Error(
+        "This character does not have Double Skill"
+      );
+    }
+
     if (
       currentPlayer.doubleSkillActivationsRemaining <= 0
     ) {
@@ -823,6 +860,12 @@ export class Game {
 
     if (currentPlayer.id !== playerId) {
       throw new Error("It is not your turn");
+    }
+
+    if (!this.playerHasCharacter(playerId, "DOUBLE_DRAW")) {
+      throw new Error(
+        "This character does not have Double Draw"
+      );
     }
 
     if (
@@ -1048,13 +1091,7 @@ export class Game {
     );
 
     if (allPlayersSelected) {
-      const hasStart5x5Character = this.players.some(
-        (player) => player.character === "START_5X5"
-      );
-
-      if (hasStart5x5Character) {
-        this.board = new Board(5, 5);
-      }
+      this.applyCharacterStartEffects();
 
       this.status = "PLAYING";
       this.startTurn();
@@ -1091,7 +1128,7 @@ export class Game {
       throw new Error("It is not your turn");
     }
 
-    if (currentPlayer.character !== "DOUBLE_PLACEMENT") {
+    if (!this.playerHasCharacter(playerId, "DOUBLE_PLACEMENT")) {
       throw new Error(
         "This character does not have Double Placement"
       );
@@ -1120,6 +1157,53 @@ export class Game {
 
   public getPlacementsRemaining(): number {
     return this.placementsRemaining;
+  }
+
+  public getTurnTimeLimit(): number {
+    if (this.status !== "PLAYING") {
+      throw new Error("Game is not currently playing");
+    }
+
+    return this.getCurrentTurnTimeLimit();
+  }
+
+  private getCurrentTurnTimeLimit(): number {
+    const currentPlayer = this.players[this.currentPlayerIndex];
+
+    const hasOpponent5Sec = this.players.some(
+      (player) =>
+        player.character === "OPPONENT_5_SEC" &&
+        player.id !== currentPlayer.id
+    );
+
+    return hasOpponent5Sec
+      ? OPPONENT_5_SEC_TIME_MS
+      : DEFAULT_TURN_TIME_MS;
+  }
+
+  private applyCharacterStartEffects(): void {
+    const hasStart5x5Character = this.players.some(
+      (player) => player.character === "START_5X5"
+    );
+
+    if (hasStart5x5Character) {
+      this.board = new Board(5, 5);
+    }
+  }
+
+  private playerHasCharacter(
+    playerId: string,
+    character: CharacterType
+  ): boolean {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    return player.character === character;
   }
 
 

@@ -25,6 +25,7 @@ class Game {
     doubleDrawActive;
     doublePlacementActive;
     placementsRemaining;
+    turnTimer = null;
     blockedLines;
     blockedCells;
     skillLockedPlayerIds;
@@ -57,6 +58,7 @@ class Game {
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
+                doublePlacementActivationsRemaining: 1,
                 winRequirement: 3,
             },
             {
@@ -66,6 +68,7 @@ class Game {
                 cardManager: new CardManager_1.CardManager(),
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
+                doublePlacementActivationsRemaining: 1,
                 winRequirement: 3,
             },
         ];
@@ -88,6 +91,10 @@ class Game {
         // this.startTurn();
     }
     switchTurn() {
+        if (this.turnTimer !== null) {
+            clearTimeout(this.turnTimer);
+            this.turnTimer = null;
+        }
         const endingPlayer = this.players[this.currentPlayerIndex];
         this.updateBlockedLines(endingPlayer.id);
         this.currentPlayerIndex =
@@ -133,6 +140,14 @@ class Game {
             this.status = "DRAW";
             console.log("Game ended in a draw!");
             return;
+        }
+        if (this.doublePlacementActive) {
+            this.placementsRemaining--;
+            if (this.placementsRemaining > 0) {
+                return;
+            }
+            this.doublePlacementActive = false;
+            this.placementsRemaining = 1;
         }
         this.switchTurn();
     }
@@ -193,6 +208,10 @@ class Game {
         if (this.status !== "PLAYING") {
             throw new Error("Game is not currently playing");
         }
+        if (this.turnTimer !== null) {
+            clearTimeout(this.turnTimer);
+            this.turnTimer = null;
+        }
         this.skillCardsUsedThisTurn = 0;
         this.doubleSkillActive = false;
         this.doubleDrawActive = false;
@@ -200,6 +219,16 @@ class Game {
         this.placementsRemaining = 1;
         const currentPlayer = this.players[this.currentPlayerIndex];
         currentPlayer.cardManager.drawCard(this.deck);
+        const turnTime = this.getCurrentTurnTimeLimit();
+        this.turnTimer = setTimeout(() => {
+            if (this.status !== "PLAYING") {
+                return;
+            }
+            this.turnTimer = null;
+            const currentPlayerAtTimeout = this.players[this.currentPlayerIndex];
+            console.log(`Player ${currentPlayerAtTimeout.id}'s turn timed out`);
+            this.switchTurn();
+        }, turnTime);
     }
     useCard(playerId, cardId, action) {
         if (this.status !== "PLAYING") {
@@ -518,6 +547,70 @@ class Game {
             throw new Error("Character has already been selected");
         }
         player.character = character;
+        const allPlayersSelected = this.players.every((player) => player.character !== null);
+        if (allPlayersSelected) {
+            this.applyCharacterStartEffects();
+            this.status = "PLAYING";
+            this.startTurn();
+        }
+    }
+    getDoublePlacementActivationsRemaining(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.doublePlacementActivationsRemaining;
+    }
+    activateDoublePlacement(playerId) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        if (currentPlayer.character !== "DOUBLE_PLACEMENT") {
+            throw new Error("This character does not have Double Placement");
+        }
+        if (currentPlayer.doublePlacementActivationsRemaining <= 0) {
+            throw new Error("No Double Placement activations remaining");
+        }
+        if (this.doublePlacementActive) {
+            throw new Error("Double Placement is already active");
+        }
+        this.doublePlacementActive = true;
+        this.placementsRemaining = 2;
+        currentPlayer.doublePlacementActivationsRemaining--;
+    }
+    getPlacementsRemaining() {
+        return this.placementsRemaining;
+    }
+    getTurnTimeLimit() {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        return this.getCurrentTurnTimeLimit();
+    }
+    getCurrentTurnTimeLimit() {
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        const hasOpponent5Sec = this.players.some((player) => player.character === "OPPONENT_5_SEC" &&
+            player.id !== currentPlayer.id);
+        return hasOpponent5Sec
+            ? constants_1.OPPONENT_5_SEC_TIME_MS
+            : constants_1.DEFAULT_TURN_TIME_MS;
+    }
+    applyCharacterStartEffects() {
+        const hasStart5x5Character = this.players.some((player) => player.character === "START_5X5");
+        if (hasStart5x5Character) {
+            this.board = new Board_1.Board(5, 5);
+        }
+    }
+    playerHasCharacter(playerId, character) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.character === character;
     }
 }
 exports.Game = Game;
