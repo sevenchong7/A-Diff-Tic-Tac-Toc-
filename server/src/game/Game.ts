@@ -35,6 +35,7 @@ interface GamePlayer {
   doubleSkillActivationsRemaining: number;
   doubleDrawActivationsRemaining: number;
   doublePlacementActivationsRemaining: number;
+  blockLineActivationsRemaining: number;
   winRequirement: number;
 }
 
@@ -141,6 +142,7 @@ export class Game {
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
         doublePlacementActivationsRemaining: 1,
+        blockLineActivationsRemaining: 2,
         winRequirement: 3,
       },
       {
@@ -151,14 +153,15 @@ export class Game {
         doubleSkillActivationsRemaining: 3,
         doubleDrawActivationsRemaining: 2,
         doublePlacementActivationsRemaining: 1,
+        blockLineActivationsRemaining: 2,
         winRequirement: 3,
       },
     ];
 
     this.players.forEach((player) => {
       player.cardManager.drawCard(this.deck);
-      player.cardManager.drawCard(this.deck);
-      player.cardManager.drawCard(this.deck);
+      // player.cardManager.drawCard(this.deck);
+      // player.cardManager.drawCard(this.deck);
     });
 
     this.currentPlayerIndex = 0;
@@ -1189,6 +1192,22 @@ export class Game {
     if (hasStart5x5Character) {
       this.board = new Board(5, 5);
     }
+
+    const playersWithChangeWinRule = this.players.filter(
+      (player) => player.character === "CHANGE_OPPONENT_WIN_RULE"
+    );
+
+    for (const player of playersWithChangeWinRule) {
+      const opponent = this.players.find(
+        (otherPlayer) => otherPlayer.id !== player.id
+      );
+
+      if (!opponent) {
+        throw new Error("Opponent not found");
+      }
+
+      opponent.winRequirement++;
+    }
   }
 
   private playerHasCharacter(
@@ -1206,5 +1225,66 @@ export class Game {
     return player.character === character;
   }
 
+  public activateBlockLine(
+    playerId: string,
+    type: "row" | "column",
+    index: number
+  ): void {
+    if (this.status !== "PLAYING") {
+      throw new Error("Game is not currently playing");
+    }
+
+    const currentPlayer =
+      this.players[this.currentPlayerIndex];
+
+    if (currentPlayer.id !== playerId) {
+      throw new Error("It is not your turn");
+    }
+
+    if (!this.playerHasCharacter(playerId, "BLOCK_LINE")) {
+      throw new Error(
+        "This character does not have Block Line"
+      );
+    }
+
+    if (currentPlayer.blockLineActivationsRemaining <= 0) {
+      throw new Error(
+        "No Block Line activations remaining"
+      );
+    }
+
+    if (type === "row") {
+      if (index < 0 || index >= this.board.getData().rows) {
+        throw new Error("Invalid row");
+      }
+    }
+
+    if (type === "column") {
+      if (
+        index < 0 ||
+        index >= this.board.getData().columns
+      ) {
+        throw new Error("Invalid column");
+      }
+    }
+
+    this.addBlockedLine(type, index, playerId);
+
+    currentPlayer.blockLineActivationsRemaining--;
+  }
+
+  public getBlockLineActivationsRemaining(
+    playerId: string
+  ): number {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+
+    return player.blockLineActivationsRemaining;
+  }
 
 }

@@ -59,6 +59,7 @@ class Game {
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
                 doublePlacementActivationsRemaining: 1,
+                blockLineActivationsRemaining: 2,
                 winRequirement: 3,
             },
             {
@@ -69,13 +70,14 @@ class Game {
                 doubleSkillActivationsRemaining: 3,
                 doubleDrawActivationsRemaining: 2,
                 doublePlacementActivationsRemaining: 1,
+                blockLineActivationsRemaining: 2,
                 winRequirement: 3,
             },
         ];
         this.players.forEach((player) => {
             player.cardManager.drawCard(this.deck);
-            player.cardManager.drawCard(this.deck);
-            player.cardManager.drawCard(this.deck);
+            // player.cardManager.drawCard(this.deck);
+            // player.cardManager.drawCard(this.deck);
         });
         this.currentPlayerIndex = 0;
         this.blockedLines = [];
@@ -406,6 +408,9 @@ class Game {
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
         }
+        if (!this.playerHasCharacter(playerId, "DOUBLE_SKILL")) {
+            throw new Error("This character does not have Double Skill");
+        }
         if (currentPlayer.doubleSkillActivationsRemaining <= 0) {
             throw new Error("No Double Skill activations remaining");
         }
@@ -432,6 +437,9 @@ class Game {
         const currentPlayer = this.players[this.currentPlayerIndex];
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
+        }
+        if (!this.playerHasCharacter(playerId, "DOUBLE_DRAW")) {
+            throw new Error("This character does not have Double Draw");
         }
         if (currentPlayer.doubleDrawActivationsRemaining <= 0) {
             throw new Error("No Double Draw activations remaining");
@@ -569,7 +577,7 @@ class Game {
         if (currentPlayer.id !== playerId) {
             throw new Error("It is not your turn");
         }
-        if (currentPlayer.character !== "DOUBLE_PLACEMENT") {
+        if (!this.playerHasCharacter(playerId, "DOUBLE_PLACEMENT")) {
             throw new Error("This character does not have Double Placement");
         }
         if (currentPlayer.doublePlacementActivationsRemaining <= 0) {
@@ -604,6 +612,14 @@ class Game {
         if (hasStart5x5Character) {
             this.board = new Board_1.Board(5, 5);
         }
+        const playersWithChangeWinRule = this.players.filter((player) => player.character === "CHANGE_OPPONENT_WIN_RULE");
+        for (const player of playersWithChangeWinRule) {
+            const opponent = this.players.find((otherPlayer) => otherPlayer.id !== player.id);
+            if (!opponent) {
+                throw new Error("Opponent not found");
+            }
+            opponent.winRequirement++;
+        }
     }
     playerHasCharacter(playerId, character) {
         const player = this.players.find((player) => player.id === playerId);
@@ -611,6 +627,41 @@ class Game {
             throw new Error("Player not found");
         }
         return player.character === character;
+    }
+    activateBlockLine(playerId, type, index) {
+        if (this.status !== "PLAYING") {
+            throw new Error("Game is not currently playing");
+        }
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.id !== playerId) {
+            throw new Error("It is not your turn");
+        }
+        if (!this.playerHasCharacter(playerId, "BLOCK_LINE")) {
+            throw new Error("This character does not have Block Line");
+        }
+        if (currentPlayer.blockLineActivationsRemaining <= 0) {
+            throw new Error("No Block Line activations remaining");
+        }
+        if (type === "row") {
+            if (index < 0 || index >= this.board.getData().rows) {
+                throw new Error("Invalid row");
+            }
+        }
+        if (type === "column") {
+            if (index < 0 ||
+                index >= this.board.getData().columns) {
+                throw new Error("Invalid column");
+            }
+        }
+        this.addBlockedLine(type, index, playerId);
+        currentPlayer.blockLineActivationsRemaining--;
+    }
+    getBlockLineActivationsRemaining(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.blockLineActivationsRemaining;
     }
 }
 exports.Game = Game;
