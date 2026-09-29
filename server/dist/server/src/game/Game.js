@@ -76,8 +76,8 @@ class Game {
         ];
         this.players.forEach((player) => {
             player.cardManager.drawCard(this.deck);
-            // player.cardManager.drawCard(this.deck);
-            // player.cardManager.drawCard(this.deck);
+            player.cardManager.drawCard(this.deck);
+            player.cardManager.drawCard(this.deck);
         });
         this.currentPlayerIndex = 0;
         this.blockedLines = [];
@@ -198,13 +198,6 @@ class Game {
             throw new Error("Player not found");
         }
         return player.cardManager.getHand();
-    }
-    getPlayerWinRequirement(playerId) {
-        const player = this.players.find((player) => player.id === playerId);
-        if (!player) {
-            throw new Error("Player not found");
-        }
-        return player.winRequirement;
     }
     startTurn() {
         if (this.status !== "PLAYING") {
@@ -662,6 +655,29 @@ class Game {
             throw new Error("Player not found");
         }
         return player.blockLineActivationsRemaining;
+    }
+    getWinRequirement(playerId) {
+        const player = this.players.find((player) => player.id === playerId);
+        if (!player) {
+            throw new Error("Player not found");
+        }
+        return player.winRequirement;
+    }
+    getGameState() {
+        return {
+            status: this.status,
+            board: this.board.getData(),
+            players: this.players.map((player) => ({
+                id: player.id,
+                sign: player.sign,
+                character: player.character,
+                winRequirement: player.winRequirement,
+                cards: player.cardManager.getHand(),
+            })),
+            currentPlayerId: this.status === "CHARACTER_SELECT"
+                ? null
+                : this.players[this.currentPlayerIndex].id,
+        };
     }
 }
 exports.Game = Game;

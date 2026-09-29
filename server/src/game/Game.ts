@@ -1,3 +1,6 @@
+import type {
+  GameState,
+} from "@shared/types/game";
 import { Card } from "./cards/Card";
 import { Board } from "./Board";
 import { WinRule } from "./rules/WinRule";
@@ -160,8 +163,8 @@ export class Game {
 
     this.players.forEach((player) => {
       player.cardManager.drawCard(this.deck);
-      // player.cardManager.drawCard(this.deck);
-      // player.cardManager.drawCard(this.deck);
+      player.cardManager.drawCard(this.deck);
+      player.cardManager.drawCard(this.deck);
     });
 
     this.currentPlayerIndex = 0;
@@ -395,19 +398,7 @@ export class Game {
     return player.cardManager.getHand();
   }
 
-  public getPlayerWinRequirement(playerId: string): number {
-    const player = this.players.find(
-      (player) => player.id === playerId
-    );
-
-    if (!player) {
-      throw new Error("Player not found");
-    }
-
-    return player.winRequirement;
-  }
-
-  public startTurn(): void {
+  private startTurn(): void {
     if (this.status !== "PLAYING") {
       throw new Error("Game is not currently playing");
     }
@@ -1285,6 +1276,36 @@ export class Game {
     }
 
     return player.blockLineActivationsRemaining;
+  }
+
+  public getWinRequirement(playerId: string): number {
+    const player = this.players.find(
+      (player) => player.id === playerId
+    );
+
+    if (!player) {
+      throw new Error("Player not found");
+    }
+    return player.winRequirement;
+  }
+
+
+  public getGameState(): GameState {
+    return {
+      status: this.status,
+      board: this.board.getData(),
+      players: this.players.map((player) => ({
+        id: player.id,
+        sign: player.sign,
+        character: player.character,
+        winRequirement: player.winRequirement,
+        cards: player.cardManager.getHand(),
+      })),
+      currentPlayerId:
+        this.status === "CHARACTER_SELECT"
+          ? null
+          : this.players[this.currentPlayerIndex].id,
+    };
   }
 
 }

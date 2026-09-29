@@ -10,12 +10,12 @@ const game = new Game(
 
 console.log(
   "Player 1 requirement:",
-  game.getPlayerWinRequirement("player1")
+  game.getWinRequirement("player1")
 );
 
 console.log(
   "Player 2 requirement:",
-  game.getPlayerWinRequirement("player2")
+  game.getWinRequirement("player2")
 );
 
 const player1Hand = game.getPlayerHand("player1");
@@ -44,10 +44,10 @@ game.useCard(
 
 console.log(
   "Player 1 requirement:",
-  game.getPlayerWinRequirement("player1")
+  game.getWinRequirement("player1")
 );
 
 console.log(
   "Player 2 requirement:",
-  game.getPlayerWinRequirement("player2")
+  game.getWinRequirement("player2")
 );

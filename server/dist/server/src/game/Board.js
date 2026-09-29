@@ -48,9 +48,6 @@ class Board {
         if (cell.sign !== null) {
             throw new Error("Cell is already occupied");
         }
-        if (cell.sign !== null) {
-            throw new Error("Cell is already occupied");
-        }
         cell.sign = sign;
     }
     addRow(position) {
