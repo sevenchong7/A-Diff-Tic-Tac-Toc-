@@ -77,7 +77,7 @@ class Game {
         this.players.forEach((player) => {
             player.cardManager.drawCard(this.deck);
             player.cardManager.drawCard(this.deck);
-            player.cardManager.drawCard(this.deck);
+            // player.cardManager.drawCard(this.deck);
         });
         this.currentPlayerIndex = 0;
         this.blockedLines = [];
@@ -312,7 +312,7 @@ class Game {
                 action.column === undefined) {
                 throw new Error("Row and column are required");
             }
-            (0, BlockCellEffect_1.blockCellEffect)(this.board, action.row, action.column);
+            (0, BlockCellEffect_1.blockCellEffect)(this.board, action.row, action.column, playerId);
             this.addBlockedCell(action.row, action.column, playerId);
         }
         if (card.type === "ADD_ROW_COLUMN") {
@@ -673,6 +673,7 @@ class Game {
                 character: player.character,
                 winRequirement: player.winRequirement,
                 cards: player.cardManager.getHand(),
+                needsDiscard: player.cardManager.needsDiscard(),
             })),
             currentPlayerId: this.status === "CHARACTER_SELECT"
                 ? null

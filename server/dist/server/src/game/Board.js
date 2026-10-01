@@ -23,6 +23,7 @@ class Board {
                 currentRow.push({
                     sign: null,
                     blocked: false,
+                    blockedByPlayerId: null,
                 });
             }
             this.data.cells.push(currentRow);
@@ -62,6 +63,7 @@ class Board {
             newRow.push({
                 sign: null,
                 blocked: false,
+                blockedByPlayerId: null,
             });
         }
         this.data.cells.splice(position, 0, newRow);
@@ -78,6 +80,7 @@ class Board {
             row.splice(position, 0, {
                 sign: null,
                 blocked: false,
+                blockedByPlayerId: null,
             });
         }
         this.data.columns++;
@@ -226,7 +229,9 @@ class Board {
         if (!this.isValidPosition(row, column)) {
             throw new Error("Invalid board position");
         }
-        this.data.cells[row][column].blocked = false;
+        const cell = this.data.cells[row][column];
+        cell.blocked = false;
+        cell.blockedByPlayerId = null;
     }
 }
 exports.Board = Board;

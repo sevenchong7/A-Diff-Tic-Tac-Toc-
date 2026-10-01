@@ -22,7 +22,7 @@ const CARD_POOL = [
     },
     {
         card: MoveRowColumnCard_1.moveRowColumnCard,
-        weight: 1,
+        weight: 90,
     },
     {
         card: BlockCellCard_1.blockCellCard,
@@ -42,11 +42,11 @@ const CARD_POOL = [
     },
     {
         card: AddRowColumnCard_1.addRowColumnCard,
-        weight: 40,
+        weight: 1,
     },
     {
         card: RemoveRowColumnCard_1.removeRowColumnCard,
-        weight: 40,
+        weight: 1,
     },
     {
         card: RemoveOpponentSignCard_1.removeOpponentSignCard,

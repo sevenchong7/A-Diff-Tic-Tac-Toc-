@@ -37,6 +37,7 @@ export class Board {
         currentRow.push({
           sign: null,
           blocked: false,
+          blockedByPlayerId: null,
         });
       }
 
@@ -91,6 +92,7 @@ export class Board {
       newRow.push({
         sign: null,
         blocked: false,
+        blockedByPlayerId: null,
       });
     }
 
@@ -112,6 +114,7 @@ export class Board {
       row.splice(position, 0, {
         sign: null,
         blocked: false,
+        blockedByPlayerId: null,
       });
     }
 
@@ -323,7 +326,10 @@ export class Board {
       throw new Error("Invalid board position");
     }
 
-    this.data.cells[row][column].blocked = false;
+    const cell = this.data.cells[row][column];
+
+    cell.blocked = false;
+    cell.blockedByPlayerId = null;
   }
 
 }

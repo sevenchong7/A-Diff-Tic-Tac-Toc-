@@ -3,7 +3,8 @@ import { Board } from "../../Board";
 export function blockCellEffect(
   board: Board,
   row: number,
-  column: number
+  column: number,
+  playerId: string
 ): void {
   const cell = board.getCell(row, column);
 
@@ -20,4 +21,6 @@ export function blockCellEffect(
   }
 
   cell.blocked = true;
+  cell.blockedByPlayerId = playerId;
+
 }

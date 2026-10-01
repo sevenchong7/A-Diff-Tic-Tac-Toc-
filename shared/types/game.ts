@@ -3,6 +3,7 @@ export type Sign = "X" | "O";
 export interface Cell {
     sign: Sign | null;
     blocked: boolean;
+    blockedByPlayerId: string | null;
 }
 
 export interface Board {
@@ -30,6 +31,7 @@ export interface GamePlayerState {
     name: string;
     description: string;
   }[];
+  needsDiscard: boolean;
 }
 
 export interface GameState {

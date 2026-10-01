@@ -73,6 +73,94 @@ io.on("connection", (socket) => {
             playerNumber: 2,
         });
     });
+    socket.on("select-character", (data) => {
+        const room = gameRooms.get(data.gameId);
+        if (!room || !room.game) {
+            socket.emit("game-error", {
+                message: "Game not found",
+            });
+            return;
+        }
+        try {
+            room.game.selectCharacter(socket.id, data.character);
+            io.to(data.gameId).emit("game-state", {
+                gameState: room.game.getGameState(),
+            });
+        }
+        catch (error) {
+            socket.emit("game-error", {
+                message: error instanceof Error
+                    ? error.message
+                    : "Failed to select character",
+            });
+        }
+    });
+    socket.on("place-sign", (data) => {
+        const room = gameRooms.get(data.gameId);
+        if (!room || !room.game) {
+            socket.emit("game-error", {
+                message: "Game not found",
+            });
+            return;
+        }
+        try {
+            room.game.placeSign(socket.id, data.row, data.column);
+            io.to(data.gameId).emit("game-state", {
+                gameState: room.game.getGameState(),
+            });
+        }
+        catch (error) {
+            socket.emit("game-error", {
+                message: error instanceof Error
+                    ? error.message
+                    : "Failed to place sign",
+            });
+        }
+    });
+    socket.on("discard-card", (data) => {
+        const room = gameRooms.get(data.gameId);
+        if (!room || !room.game) {
+            socket.emit("game-error", {
+                message: "Game not found",
+            });
+            return;
+        }
+        try {
+            room.game.discardCard(socket.id, data.cardId);
+            io.to(data.gameId).emit("game-state", {
+                gameState: room.game.getGameState(),
+            });
+        }
+        catch (error) {
+            socket.emit("game-error", {
+                message: error instanceof Error
+                    ? error.message
+                    : "Failed to discard card",
+            });
+        }
+    });
+    socket.on("use-card", (data) => {
+        const room = gameRooms.get(data.gameId);
+        if (!room || !room.game) {
+            socket.emit("game-error", {
+                message: "Game not found",
+            });
+            return;
+        }
+        try {
+            room.game.useCard(socket.id, data.cardId, data.action);
+            io.to(data.gameId).emit("game-state", {
+                gameState: room.game.getGameState(),
+            });
+        }
+        catch (error) {
+            socket.emit("game-error", {
+                message: error instanceof Error
+                    ? error.message
+                    : "Failed to use card",
+            });
+        }
+    });
 });
 const PORT = 3000;
 httpServer.listen(PORT, () => {

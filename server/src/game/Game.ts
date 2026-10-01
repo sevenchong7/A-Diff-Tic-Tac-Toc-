@@ -164,7 +164,7 @@ export class Game {
     this.players.forEach((player) => {
       player.cardManager.drawCard(this.deck);
       player.cardManager.drawCard(this.deck);
-      player.cardManager.drawCard(this.deck);
+      // player.cardManager.drawCard(this.deck);
     });
 
     this.currentPlayerIndex = 0;
@@ -628,7 +628,8 @@ export class Game {
       blockCellEffect(
         this.board,
         action.row,
-        action.column
+        action.column,
+        playerId
       );
 
       this.addBlockedCell(
@@ -1300,6 +1301,7 @@ export class Game {
         character: player.character,
         winRequirement: player.winRequirement,
         cards: player.cardManager.getHand(),
+        needsDiscard: player.cardManager.needsDiscard(),
       })),
       currentPlayerId:
         this.status === "CHARACTER_SELECT"

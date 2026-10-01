@@ -26,7 +26,7 @@ const CARD_POOL: WeightedCard[] = [
   },
   {
     card: moveRowColumnCard,
-    weight: 1,
+    weight: 90,
   },
   {
     card: blockCellCard,
@@ -46,11 +46,11 @@ const CARD_POOL: WeightedCard[] = [
   },
   {
     card: addRowColumnCard,
-    weight: 40,
+    weight: 1,
   },
     {
     card: removeRowColumnCard,
-    weight: 40,
+    weight: 1,
   },
   {
     card: removeOpponentSignCard,
