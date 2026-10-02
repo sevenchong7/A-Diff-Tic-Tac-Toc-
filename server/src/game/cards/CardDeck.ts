@@ -18,43 +18,43 @@ interface WeightedCard {
 const CARD_POOL: WeightedCard[] = [
   {
     card: moveSignCard,
-    weight: 1,
+    weight: 5,
   },
   {
     card: moveSignVerticalCard,
-    weight: 1,
+    weight: 10,
   },
   {
     card: moveRowColumnCard,
-    weight: 90,
+    weight: 10,
   },
   {
     card: blockCellCard,
-    weight: 1,
+    weight: 20,
   },
   {
     card: opponentSkillLockCard,
-    weight: 1,
+    weight: 10,
   },
   {
     card: increaseOpponentWinRequirementCard,
-    weight: 1,
+    weight: 5,
   },
   {
     card: decreaseOwnWinRequirementCard,
-    weight: 1,
+    weight: 5,
   },
   {
     card: addRowColumnCard,
-    weight: 1,
+    weight: 15,
   },
     {
     card: removeRowColumnCard,
-    weight: 1,
+    weight: 15,
   },
   {
     card: removeOpponentSignCard,
-    weight: 1,
+    weight: 5,
   },
 
 ];

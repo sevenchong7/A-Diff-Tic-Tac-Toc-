@@ -259,10 +259,113 @@ io.on("connection", (socket) => {
     }
   );
 
+  socket.on(
+    "activate-double-skill",
+    (data: {
+      gameId: string;
+    }) => {
+      const room = gameRooms.get(data.gameId);
+
+      if (!room || !room.game) {
+        socket.emit("game-error", {
+          message: "Game not found",
+        });
+
+        return;
+      }
+
+      try {
+        room.game.activateDoubleSkill(socket.id);
+
+        io.to(data.gameId).emit("game-state", {
+          gameState: room.game.getGameState(),
+        });
+      } catch (error) {
+        socket.emit("game-error", {
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to activate Double Skill",
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "activate-double-draw",
+    ({ gameId }) => {
+      try {
+        const room = gameRooms.get(gameId);
+
+        if (!room || !room.game) {
+          socket.emit("game-error", {
+            message: "Game not found",
+          });
+
+          return;
+        }
+
+        room.game.activateDoubleDraw(socket.id);
+
+        io.to(gameId).emit("game-state", {
+          gameState: room.game.getGameState(),
+        });
+      } catch (error) {
+        socket.emit("game-error", {
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to activate Double Draw",
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "activate-block-line",
+    ({
+      gameId,
+      type,
+      index,
+    }: {
+      gameId: string;
+      type: "row" | "column";
+      index: number;
+    }) => {
+      try {
+        const room = gameRooms.get(gameId);
+
+        if (!room || !room.game) {
+          socket.emit("game-error", {
+            message: "Game not found",
+          });
+
+          return;
+        }
+
+        room.game.activateBlockLine(
+          socket.id,
+          type,
+          index
+        );
+
+        io.to(gameId).emit("game-state", {
+          gameState: room.game.getGameState(),
+        });
+      } catch (error) {
+        socket.emit("game-error", {
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to activate Block Line",
+        });
+      }
+    }
+  );
+
+
+  //end of line
 });
-
-
-
 const PORT = 3000;
 
 httpServer.listen(PORT, () => {

@@ -14,43 +14,43 @@ const RemoveRowColumnCard_1 = require("./RemoveRowColumnCard");
 const CARD_POOL = [
     {
         card: MoveSignCard_1.moveSignCard,
-        weight: 1,
+        weight: 5,
     },
     {
         card: MoveSignVerticalCard_1.moveSignVerticalCard,
-        weight: 1,
+        weight: 10,
     },
     {
         card: MoveRowColumnCard_1.moveRowColumnCard,
-        weight: 90,
+        weight: 10,
     },
     {
         card: BlockCellCard_1.blockCellCard,
-        weight: 1,
+        weight: 20,
     },
     {
         card: OpponentSkillLockCard_1.opponentSkillLockCard,
-        weight: 1,
+        weight: 10,
     },
     {
         card: IncreaseOpponentWinRequirementCard_1.increaseOpponentWinRequirementCard,
-        weight: 1,
+        weight: 5,
     },
     {
         card: DecreaseOwnWinRequirementCard_1.decreaseOwnWinRequirementCard,
-        weight: 1,
+        weight: 5,
     },
     {
         card: AddRowColumnCard_1.addRowColumnCard,
-        weight: 1,
+        weight: 15,
     },
     {
         card: RemoveRowColumnCard_1.removeRowColumnCard,
-        weight: 1,
+        weight: 15,
     },
     {
         card: RemoveOpponentSignCard_1.removeOpponentSignCard,
-        weight: 1,
+        weight: 5,
     },
 ];
 class CardDeck {

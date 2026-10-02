@@ -1,3 +1,5 @@
+import type { CharacterState } from "../../server/src/game/characters/CharacterType";
+
 export type Sign = "X" | "O";
 
 export interface Cell {
@@ -23,7 +25,7 @@ export type GameStatus =
 export interface GamePlayerState {
   id: string;
   sign: Sign;
-  character: string | null;
+  character: CharacterState | null;
   winRequirement: number;
   cards: {
     id: string;
@@ -32,6 +34,14 @@ export interface GamePlayerState {
     description: string;
   }[];
   needsDiscard: boolean;
+  skillLocked: boolean;
+}
+
+export interface BlockedLine {
+  type: "row" | "column";
+  index: number;
+  remainingTurns: number;
+  blockedByPlayerId: string;
 }
 
 export interface GameState {
@@ -39,4 +49,5 @@ export interface GameState {
   board: Board;
   players: GamePlayerState[];
   currentPlayerId: string | null;
+  blockedLines: BlockedLine[];
 }

@@ -1,4 +1,5 @@
 import type {
+  BlockedLine,
   GameState,
 } from "@shared/types/game";
 import { Card } from "./cards/Card";
@@ -17,7 +18,7 @@ import {
 import { CardManager } from "./cards/CardManager";
 import { CardDeck } from "./cards/CardDeck";
 import type { CardAction } from "./cards/CardAction";
-import type { CharacterType } from "./characters/CharacterType";
+import type { CharacterState, CharacterType } from "./characters/CharacterType";
 
 import { moveSignEffect } from "./cards/effects/MoveSignEffect";
 import { moveSignVerticalEffect } from "./cards/effects/MoveSignVerticalEffect";
@@ -33,20 +34,9 @@ import { removeRowColumnEffect } from "./cards/effects/removeRowColumnEffect";
 interface GamePlayer {
   id: string;
   sign: "X" | "O";
-  character: CharacterType | null;
+  character: CharacterState  | null;
   cardManager: CardManager;
-  doubleSkillActivationsRemaining: number;
-  doubleDrawActivationsRemaining: number;
-  doublePlacementActivationsRemaining: number;
-  blockLineActivationsRemaining: number;
   winRequirement: number;
-}
-
-interface BlockedLine {
-  type: "row" | "column";
-  index: number;
-  remainingTurns: number;
-  blockedByPlayerId: string;
 }
 
 interface BlockedCell {
@@ -65,9 +55,9 @@ export class Game {
 
   private skillCardsUsedThisTurn: number;
 
-  private doubleSkillActive: boolean;
+  // private doubleSkillActive: boolean;
 
-  private doubleDrawActive: boolean;
+  // private doubleDrawActive: boolean;
 
   private doublePlacementActive: boolean;
 
@@ -142,10 +132,6 @@ export class Game {
         sign: "X",
         character: null,
         cardManager: new CardManager(),
-        doubleSkillActivationsRemaining: 3,
-        doubleDrawActivationsRemaining: 2,
-        doublePlacementActivationsRemaining: 1,
-        blockLineActivationsRemaining: 2,
         winRequirement: 3,
       },
       {
@@ -153,10 +139,6 @@ export class Game {
         sign: "O",
         character: null,
         cardManager: new CardManager(),
-        doubleSkillActivationsRemaining: 3,
-        doubleDrawActivationsRemaining: 2,
-        doublePlacementActivationsRemaining: 1,
-        blockLineActivationsRemaining: 2,
         winRequirement: 3,
       },
     ];
@@ -175,9 +157,9 @@ export class Game {
 
     this.skillCardsUsedThisTurn = 0;
     
-    this.doubleSkillActive = false;
+    // this.doubleSkillActive = false;
 
-    this.doubleDrawActive = false;
+    // this.doubleDrawActive = false;
 
     this.doublePlacementActive = false;
 
@@ -409,12 +391,21 @@ export class Game {
     }
 
     this.skillCardsUsedThisTurn = 0;
-    this.doubleSkillActive = false;
-    this.doubleDrawActive = false;
+    // this.doubleSkillActive = false;
+    // this.doubleDrawActive = false;
     this.doublePlacementActive = false;
     this.placementsRemaining = 1;
 
     const currentPlayer = this.players[this.currentPlayerIndex];
+
+
+    if(currentPlayer.character?.type === "DOUBLE_DRAW" && currentPlayer.character.doubleDrawActive){
+      currentPlayer.character.doubleDrawActive = false;
+    }
+
+    if(currentPlayer.character?.type === "DOUBLE_SKILL" && currentPlayer.character.doubleSkillActive){
+      currentPlayer.character.doubleSkillActive = false;
+    }
 
     currentPlayer.cardManager.drawCard(this.deck);
 
@@ -466,8 +457,14 @@ export class Game {
       );
     }
 
+    if(currentPlayer.character == null){
+      throw new Error(
+        "You cannot use Skill Cards without a character"
+      );
+    }
+
     const maxSkillCardsThisTurn =
-      this.doubleSkillActive ? 2 : 1;
+    currentPlayer.character.type === "DOUBLE_SKILL" && currentPlayer.character.doubleSkillActive ? 2 : 1;
 
     if (
       this.skillCardsUsedThisTurn >=
@@ -809,22 +806,32 @@ export class Game {
     }
 
     if (
-      currentPlayer.doubleSkillActivationsRemaining <= 0
+      currentPlayer.character?.type !== "DOUBLE_SKILL"
+    ) {
+      throw new Error(
+        "This character does not have Double Skill"
+      );
+    }
+
+    if (
+      currentPlayer.character.doubleSkillActivationsRemaining <= 0
     ) {
       throw new Error(
         "No Double Skill activations remaining"
       );
     }
 
-    if (this.doubleSkillActive) {
+    if (currentPlayer.character.doubleSkillActive) {
       throw new Error(
         "Double Skill is already active"
       );
     }
 
-    this.doubleSkillActive = true;
+    // this.doubleSkillActive = true;
 
-    currentPlayer.doubleSkillActivationsRemaining--;
+    currentPlayer.character.doubleSkillActive = true;
+
+    currentPlayer.character.doubleSkillActivationsRemaining--;
   }
 
   public getDoubleSkillActivationsRemaining(
@@ -838,12 +845,18 @@ export class Game {
       throw new Error("Player not found");
     }
 
-    return player.doubleSkillActivationsRemaining;
+    if (player.character?.type !== "DOUBLE_SKILL") {
+      throw new Error(
+        "This character does not have Double Skill"
+      );
+    }
+
+    return player.character.doubleSkillActivationsRemaining;
   }
 
-  public getMaxSkillCardsThisTurn(): number {
-    return this.doubleSkillActive ? 2 : 1;
-  }
+  // public getMaxSkillCardsThisTurn(): number {
+  //   return this.doubleSkillActive ? 2 : 1;
+  // }
 
   public activateDoubleDraw(playerId: string): void {
     if (this.status !== "PLAYING") {
@@ -864,24 +877,34 @@ export class Game {
     }
 
     if (
-      currentPlayer.doubleDrawActivationsRemaining <= 0
+      currentPlayer.character?.type !== "DOUBLE_DRAW"
+    ) {
+      throw new Error(
+        "This character does not have Double Draw"
+      );
+    }
+
+    if (
+      currentPlayer.character.doubleDrawActivationsRemaining <= 0
     ) {
       throw new Error(
         "No Double Draw activations remaining"
       );
     }
 
-    if (this.doubleDrawActive) {
+    if (currentPlayer.character.doubleDrawActive) {
       throw new Error(
         "Double Draw is already active"
       );
     }
 
-    this.doubleDrawActive = true;
+    // this.doubleDrawActive = true;
+
+    currentPlayer.character.doubleDrawActive = true;
 
     currentPlayer.cardManager.drawCard(this.deck);
 
-    currentPlayer.doubleDrawActivationsRemaining--;
+    currentPlayer.character.doubleDrawActivationsRemaining--;
   }
 
   public getDoubleDrawActivationsRemaining(
@@ -895,7 +918,13 @@ export class Game {
       throw new Error("Player not found");
     }
 
-    return player.doubleDrawActivationsRemaining;
+    if (player.character?.type !== "DOUBLE_DRAW") {
+      throw new Error(
+        "This character does not have Double Draw"
+      );
+    }
+
+    return player.character.doubleDrawActivationsRemaining;
   }
 
   public discardCard(
@@ -1039,7 +1068,7 @@ export class Game {
 
   public getPlayerCharacter(
     playerId: string
-  ): CharacterType {
+  ): CharacterState {
     const player = this.players.find(
       (player) => player.id === playerId
     );
@@ -1053,6 +1082,53 @@ export class Game {
     }
 
     return player.character;
+  }
+
+  private createCharacterState(
+    character: CharacterType
+  ): CharacterState {
+    switch (character) {
+      case "DOUBLE_SKILL":
+        return {
+          type: "DOUBLE_SKILL",
+          doubleSkillActive: false,
+          doubleSkillActivationsRemaining: 2,
+        };
+
+      case "DOUBLE_DRAW":
+        return {
+          type: "DOUBLE_DRAW",
+          doubleDrawActive: false,
+          doubleDrawActivationsRemaining: 2,
+        };
+
+      case "BLOCK_LINE":
+        return {
+          type: "BLOCK_LINE",
+          blockLineActivationsRemaining: 2,
+        };
+
+      case "CHANGE_OPPONENT_WIN_RULE":
+        return {
+          type: "CHANGE_OPPONENT_WIN_RULE",
+        };
+
+      case "START_5X5":
+        return {
+          type: "START_5X5",
+        };
+
+      case "OPPONENT_5_SEC":
+        return {
+          type: "OPPONENT_5_SEC",
+        };
+
+      case "DOUBLE_PLACEMENT":
+        return {
+          type: "DOUBLE_PLACEMENT",
+          doublePlacementActivationsRemaining: 1,
+        };
+    }
   }
 
   public selectCharacter(
@@ -1079,7 +1155,7 @@ export class Game {
       );
     }
 
-    player.character = character;
+    player.character = this.createCharacterState(character);
 
     const allPlayersSelected = this.players.every(
       (player) => player.character !== null
@@ -1104,7 +1180,13 @@ export class Game {
       throw new Error("Player not found");
     }
 
-    return player.doublePlacementActivationsRemaining;
+    if (player.character?.type !== "DOUBLE_PLACEMENT") {
+      throw new Error(
+        "This character does not have Double Placement"
+      );
+    }
+
+    return player.character.doublePlacementActivationsRemaining;
   }
 
   public activateDoublePlacement(
@@ -1129,8 +1211,14 @@ export class Game {
       );
     }
 
+    if (currentPlayer.character?.type !== "DOUBLE_PLACEMENT") {
+      throw new Error(
+        "This character does not have Double Placement"
+      );
+    }
+
     if (
-      currentPlayer.doublePlacementActivationsRemaining <= 0
+      currentPlayer.character.doublePlacementActivationsRemaining <= 0
     ) {
       throw new Error(
         "No Double Placement activations remaining"
@@ -1147,7 +1235,7 @@ export class Game {
 
     this.placementsRemaining = 2;
 
-    currentPlayer.doublePlacementActivationsRemaining--;
+    currentPlayer.character.doublePlacementActivationsRemaining--;
   }
 
   public getPlacementsRemaining(): number {
@@ -1167,7 +1255,7 @@ export class Game {
 
     const hasOpponent5Sec = this.players.some(
       (player) =>
-        player.character === "OPPONENT_5_SEC" &&
+        player.character?.type === "OPPONENT_5_SEC" &&
         player.id !== currentPlayer.id
     );
 
@@ -1178,7 +1266,7 @@ export class Game {
 
   private applyCharacterStartEffects(): void {
     const hasStart5x5Character = this.players.some(
-      (player) => player.character === "START_5X5"
+      (player) => player.character?.type === "START_5X5"
     );
 
     if (hasStart5x5Character) {
@@ -1186,7 +1274,7 @@ export class Game {
     }
 
     const playersWithChangeWinRule = this.players.filter(
-      (player) => player.character === "CHANGE_OPPONENT_WIN_RULE"
+      (player) => player.character?.type === "CHANGE_OPPONENT_WIN_RULE"
     );
 
     for (const player of playersWithChangeWinRule) {
@@ -1214,7 +1302,7 @@ export class Game {
       throw new Error("Player not found");
     }
 
-    return player.character === character;
+    return player.character?.type === character;
   }
 
   public activateBlockLine(
@@ -1239,7 +1327,13 @@ export class Game {
       );
     }
 
-    if (currentPlayer.blockLineActivationsRemaining <= 0) {
+    if (currentPlayer.character?.type !== "BLOCK_LINE") {
+      throw new Error(
+        "This character does not have Block Line"
+      );
+    }
+
+    if (currentPlayer.character.blockLineActivationsRemaining <= 0) {
       throw new Error(
         "No Block Line activations remaining"
       );
@@ -1260,9 +1354,22 @@ export class Game {
       }
     }
 
+    const existingBlockedLine =
+      this.blockedLines.find(
+        (blockedLine) =>
+          blockedLine.type === type &&
+          blockedLine.index === index
+      );
+
+    if (existingBlockedLine) {
+      throw new Error(
+        `This ${type} is already blocked`
+      );
+    }
+
     this.addBlockedLine(type, index, playerId);
 
-    currentPlayer.blockLineActivationsRemaining--;
+    currentPlayer.character.blockLineActivationsRemaining--;
   }
 
   public getBlockLineActivationsRemaining(
@@ -1276,7 +1383,13 @@ export class Game {
       throw new Error("Player not found");
     }
 
-    return player.blockLineActivationsRemaining;
+    if (player.character?.type !== "BLOCK_LINE") {
+      throw new Error(
+        "This character does not have Block Line"
+      );
+    }
+
+    return player.character.blockLineActivationsRemaining;
   }
 
   public getWinRequirement(playerId: string): number {
@@ -1290,7 +1403,6 @@ export class Game {
     return player.winRequirement;
   }
 
-
   public getGameState(): GameState {
     return {
       status: this.status,
@@ -1302,11 +1414,13 @@ export class Game {
         winRequirement: player.winRequirement,
         cards: player.cardManager.getHand(),
         needsDiscard: player.cardManager.needsDiscard(),
+        skillLocked: this.isPlayerSkillLocked(player.id),
       })),
       currentPlayerId:
         this.status === "CHARACTER_SELECT"
           ? null
           : this.players[this.currentPlayerIndex].id,
+      blockedLines: this.blockedLines
     };
   }
 

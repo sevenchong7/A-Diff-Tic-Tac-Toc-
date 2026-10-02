@@ -21,8 +21,8 @@ class Game {
     deck;
     currentPlayerIndex;
     skillCardsUsedThisTurn;
-    doubleSkillActive;
-    doubleDrawActive;
+    // private doubleSkillActive: boolean;
+    // private doubleDrawActive: boolean;
     doublePlacementActive;
     placementsRemaining;
     turnTimer = null;
@@ -56,10 +56,6 @@ class Game {
                 sign: "X",
                 character: null,
                 cardManager: new CardManager_1.CardManager(),
-                doubleSkillActivationsRemaining: 3,
-                doubleDrawActivationsRemaining: 2,
-                doublePlacementActivationsRemaining: 1,
-                blockLineActivationsRemaining: 2,
                 winRequirement: 3,
             },
             {
@@ -67,10 +63,6 @@ class Game {
                 sign: "O",
                 character: null,
                 cardManager: new CardManager_1.CardManager(),
-                doubleSkillActivationsRemaining: 3,
-                doubleDrawActivationsRemaining: 2,
-                doublePlacementActivationsRemaining: 1,
-                blockLineActivationsRemaining: 2,
                 winRequirement: 3,
             },
         ];
@@ -83,8 +75,8 @@ class Game {
         this.blockedLines = [];
         this.blockedCells = [];
         this.skillCardsUsedThisTurn = 0;
-        this.doubleSkillActive = false;
-        this.doubleDrawActive = false;
+        // this.doubleSkillActive = false;
+        // this.doubleDrawActive = false;
         this.doublePlacementActive = false;
         this.placementsRemaining = 1;
         this.skillLockedPlayerIds = new Set();
@@ -208,11 +200,17 @@ class Game {
             this.turnTimer = null;
         }
         this.skillCardsUsedThisTurn = 0;
-        this.doubleSkillActive = false;
-        this.doubleDrawActive = false;
+        // this.doubleSkillActive = false;
+        // this.doubleDrawActive = false;
         this.doublePlacementActive = false;
         this.placementsRemaining = 1;
         const currentPlayer = this.players[this.currentPlayerIndex];
+        if (currentPlayer.character?.type === "DOUBLE_DRAW" && currentPlayer.character.doubleDrawActive) {
+            currentPlayer.character.doubleDrawActive = false;
+        }
+        if (currentPlayer.character?.type === "DOUBLE_SKILL" && currentPlayer.character.doubleSkillActive) {
+            currentPlayer.character.doubleSkillActive = false;
+        }
         currentPlayer.cardManager.drawCard(this.deck);
         const turnTime = this.getCurrentTurnTimeLimit();
         this.turnTimer = setTimeout(() => {
@@ -239,7 +237,10 @@ class Game {
         if (this.isPlayerSkillLocked(playerId)) {
             throw new Error("You cannot use Skill Cards during this turn");
         }
-        const maxSkillCardsThisTurn = this.doubleSkillActive ? 2 : 1;
+        if (currentPlayer.character == null) {
+            throw new Error("You cannot use Skill Cards without a character");
+        }
+        const maxSkillCardsThisTurn = currentPlayer.character.type === "DOUBLE_SKILL" && currentPlayer.character.doubleSkillActive ? 2 : 1;
         if (this.skillCardsUsedThisTurn >=
             maxSkillCardsThisTurn) {
             throw new Error(`You can only use ${maxSkillCardsThisTurn} skill card${maxSkillCardsThisTurn > 1 ? "s" : ""} per turn`);
@@ -404,25 +405,32 @@ class Game {
         if (!this.playerHasCharacter(playerId, "DOUBLE_SKILL")) {
             throw new Error("This character does not have Double Skill");
         }
-        if (currentPlayer.doubleSkillActivationsRemaining <= 0) {
+        if (currentPlayer.character?.type !== "DOUBLE_SKILL") {
+            throw new Error("This character does not have Double Skill");
+        }
+        if (currentPlayer.character.doubleSkillActivationsRemaining <= 0) {
             throw new Error("No Double Skill activations remaining");
         }
-        if (this.doubleSkillActive) {
+        if (currentPlayer.character.doubleSkillActive) {
             throw new Error("Double Skill is already active");
         }
-        this.doubleSkillActive = true;
-        currentPlayer.doubleSkillActivationsRemaining--;
+        // this.doubleSkillActive = true;
+        currentPlayer.character.doubleSkillActive = true;
+        currentPlayer.character.doubleSkillActivationsRemaining--;
     }
     getDoubleSkillActivationsRemaining(playerId) {
         const player = this.players.find((player) => player.id === playerId);
         if (!player) {
             throw new Error("Player not found");
         }
-        return player.doubleSkillActivationsRemaining;
+        if (player.character?.type !== "DOUBLE_SKILL") {
+            throw new Error("This character does not have Double Skill");
+        }
+        return player.character.doubleSkillActivationsRemaining;
     }
-    getMaxSkillCardsThisTurn() {
-        return this.doubleSkillActive ? 2 : 1;
-    }
+    // public getMaxSkillCardsThisTurn(): number {
+    //   return this.doubleSkillActive ? 2 : 1;
+    // }
     activateDoubleDraw(playerId) {
         if (this.status !== "PLAYING") {
             throw new Error("Game is not currently playing");
@@ -434,22 +442,29 @@ class Game {
         if (!this.playerHasCharacter(playerId, "DOUBLE_DRAW")) {
             throw new Error("This character does not have Double Draw");
         }
-        if (currentPlayer.doubleDrawActivationsRemaining <= 0) {
+        if (currentPlayer.character?.type !== "DOUBLE_DRAW") {
+            throw new Error("This character does not have Double Draw");
+        }
+        if (currentPlayer.character.doubleDrawActivationsRemaining <= 0) {
             throw new Error("No Double Draw activations remaining");
         }
-        if (this.doubleDrawActive) {
+        if (currentPlayer.character.doubleDrawActive) {
             throw new Error("Double Draw is already active");
         }
-        this.doubleDrawActive = true;
+        // this.doubleDrawActive = true;
+        currentPlayer.character.doubleDrawActive = true;
         currentPlayer.cardManager.drawCard(this.deck);
-        currentPlayer.doubleDrawActivationsRemaining--;
+        currentPlayer.character.doubleDrawActivationsRemaining--;
     }
     getDoubleDrawActivationsRemaining(playerId) {
         const player = this.players.find((player) => player.id === playerId);
         if (!player) {
             throw new Error("Player not found");
         }
-        return player.doubleDrawActivationsRemaining;
+        if (player.character?.type !== "DOUBLE_DRAW") {
+            throw new Error("This character does not have Double Draw");
+        }
+        return player.character.doubleDrawActivationsRemaining;
     }
     discardCard(playerId, cardId) {
         if (this.status !== "PLAYING") {
@@ -536,6 +551,44 @@ class Game {
         }
         return player.character;
     }
+    createCharacterState(character) {
+        switch (character) {
+            case "DOUBLE_SKILL":
+                return {
+                    type: "DOUBLE_SKILL",
+                    doubleSkillActive: false,
+                    doubleSkillActivationsRemaining: 2,
+                };
+            case "DOUBLE_DRAW":
+                return {
+                    type: "DOUBLE_DRAW",
+                    doubleDrawActive: false,
+                    doubleDrawActivationsRemaining: 2,
+                };
+            case "BLOCK_LINE":
+                return {
+                    type: "BLOCK_LINE",
+                    blockLineActivationsRemaining: 2,
+                };
+            case "CHANGE_OPPONENT_WIN_RULE":
+                return {
+                    type: "CHANGE_OPPONENT_WIN_RULE",
+                };
+            case "START_5X5":
+                return {
+                    type: "START_5X5",
+                };
+            case "OPPONENT_5_SEC":
+                return {
+                    type: "OPPONENT_5_SEC",
+                };
+            case "DOUBLE_PLACEMENT":
+                return {
+                    type: "DOUBLE_PLACEMENT",
+                    doublePlacementActivationsRemaining: 1,
+                };
+        }
+    }
     selectCharacter(playerId, character) {
         if (this.status !== "CHARACTER_SELECT") {
             throw new Error("Character selection is not currently active");
@@ -547,7 +600,7 @@ class Game {
         if (player.character !== null) {
             throw new Error("Character has already been selected");
         }
-        player.character = character;
+        player.character = this.createCharacterState(character);
         const allPlayersSelected = this.players.every((player) => player.character !== null);
         if (allPlayersSelected) {
             this.applyCharacterStartEffects();
@@ -560,7 +613,10 @@ class Game {
         if (!player) {
             throw new Error("Player not found");
         }
-        return player.doublePlacementActivationsRemaining;
+        if (player.character?.type !== "DOUBLE_PLACEMENT") {
+            throw new Error("This character does not have Double Placement");
+        }
+        return player.character.doublePlacementActivationsRemaining;
     }
     activateDoublePlacement(playerId) {
         if (this.status !== "PLAYING") {
@@ -573,7 +629,10 @@ class Game {
         if (!this.playerHasCharacter(playerId, "DOUBLE_PLACEMENT")) {
             throw new Error("This character does not have Double Placement");
         }
-        if (currentPlayer.doublePlacementActivationsRemaining <= 0) {
+        if (currentPlayer.character?.type !== "DOUBLE_PLACEMENT") {
+            throw new Error("This character does not have Double Placement");
+        }
+        if (currentPlayer.character.doublePlacementActivationsRemaining <= 0) {
             throw new Error("No Double Placement activations remaining");
         }
         if (this.doublePlacementActive) {
@@ -581,7 +640,7 @@ class Game {
         }
         this.doublePlacementActive = true;
         this.placementsRemaining = 2;
-        currentPlayer.doublePlacementActivationsRemaining--;
+        currentPlayer.character.doublePlacementActivationsRemaining--;
     }
     getPlacementsRemaining() {
         return this.placementsRemaining;
@@ -594,18 +653,18 @@ class Game {
     }
     getCurrentTurnTimeLimit() {
         const currentPlayer = this.players[this.currentPlayerIndex];
-        const hasOpponent5Sec = this.players.some((player) => player.character === "OPPONENT_5_SEC" &&
+        const hasOpponent5Sec = this.players.some((player) => player.character?.type === "OPPONENT_5_SEC" &&
             player.id !== currentPlayer.id);
         return hasOpponent5Sec
             ? constants_1.OPPONENT_5_SEC_TIME_MS
             : constants_1.DEFAULT_TURN_TIME_MS;
     }
     applyCharacterStartEffects() {
-        const hasStart5x5Character = this.players.some((player) => player.character === "START_5X5");
+        const hasStart5x5Character = this.players.some((player) => player.character?.type === "START_5X5");
         if (hasStart5x5Character) {
             this.board = new Board_1.Board(5, 5);
         }
-        const playersWithChangeWinRule = this.players.filter((player) => player.character === "CHANGE_OPPONENT_WIN_RULE");
+        const playersWithChangeWinRule = this.players.filter((player) => player.character?.type === "CHANGE_OPPONENT_WIN_RULE");
         for (const player of playersWithChangeWinRule) {
             const opponent = this.players.find((otherPlayer) => otherPlayer.id !== player.id);
             if (!opponent) {
@@ -619,7 +678,7 @@ class Game {
         if (!player) {
             throw new Error("Player not found");
         }
-        return player.character === character;
+        return player.character?.type === character;
     }
     activateBlockLine(playerId, type, index) {
         if (this.status !== "PLAYING") {
@@ -632,7 +691,10 @@ class Game {
         if (!this.playerHasCharacter(playerId, "BLOCK_LINE")) {
             throw new Error("This character does not have Block Line");
         }
-        if (currentPlayer.blockLineActivationsRemaining <= 0) {
+        if (currentPlayer.character?.type !== "BLOCK_LINE") {
+            throw new Error("This character does not have Block Line");
+        }
+        if (currentPlayer.character.blockLineActivationsRemaining <= 0) {
             throw new Error("No Block Line activations remaining");
         }
         if (type === "row") {
@@ -646,15 +708,23 @@ class Game {
                 throw new Error("Invalid column");
             }
         }
+        const existingBlockedLine = this.blockedLines.find((blockedLine) => blockedLine.type === type &&
+            blockedLine.index === index);
+        if (existingBlockedLine) {
+            throw new Error(`This ${type} is already blocked`);
+        }
         this.addBlockedLine(type, index, playerId);
-        currentPlayer.blockLineActivationsRemaining--;
+        currentPlayer.character.blockLineActivationsRemaining--;
     }
     getBlockLineActivationsRemaining(playerId) {
         const player = this.players.find((player) => player.id === playerId);
         if (!player) {
             throw new Error("Player not found");
         }
-        return player.blockLineActivationsRemaining;
+        if (player.character?.type !== "BLOCK_LINE") {
+            throw new Error("This character does not have Block Line");
+        }
+        return player.character.blockLineActivationsRemaining;
     }
     getWinRequirement(playerId) {
         const player = this.players.find((player) => player.id === playerId);
@@ -674,10 +744,12 @@ class Game {
                 winRequirement: player.winRequirement,
                 cards: player.cardManager.getHand(),
                 needsDiscard: player.cardManager.needsDiscard(),
+                skillLocked: this.isPlayerSkillLocked(player.id),
             })),
             currentPlayerId: this.status === "CHARACTER_SELECT"
                 ? null
                 : this.players[this.currentPlayerIndex].id,
+            blockedLines: this.blockedLines
         };
     }
 }

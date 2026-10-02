@@ -9,6 +9,7 @@ const socket = io("http://localhost:3000");
 function App() {
   const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [selectingCharacter, setSelectingCharacter] = useState("");
 
   const [selectedCell, setSelectedCell] = useState<{
     row: number;
@@ -25,6 +26,8 @@ function App() {
 
   const [selectedPosition, setSelectedPosition] =
     useState<number | null>(null);
+
+  const [blockLineMode, setBlockLineMode] = useState<"row" | "column" | null>(null);
 
   const createGame = () => {
     const gameId = "test-game";
@@ -71,6 +74,29 @@ function App() {
     });
   };
 
+  const activateDoubleSkill = () => {
+    socket.emit("activate-double-skill", {
+      gameId: "test-game",
+    });
+  };
+
+  const activateDoubleDraw = () => {
+    socket.emit("activate-double-draw", {
+      gameId: "test-game",
+    });
+  };
+
+  const activateBlockLine = (
+    type: "row" | "column",
+    index: number
+  ) => {
+    socket.emit("activate-block-line", {
+      gameId: "test-game",
+      type,
+      index,
+    });
+  };
+
   useEffect(() => {
     const handleConnect = () => {
       console.log("Connected to server:", socket.id);
@@ -103,7 +129,6 @@ function App() {
     }
 
   }, []);
-
 
   useEffect(() => {
     const handleGameJoined = (data: { gameId: string }) => {
@@ -165,56 +190,151 @@ function App() {
         Server status:{" "}
         {connected ? "Connected" : "Disconnected"}
       </p>
+    { gameState === null && (
+      <>
+        <button onClick={createGame}>
+          Create Game
+        </button>
 
-      <button onClick={createGame}>
-        Create Game
-      </button>
 
-
-      <button onClick={joinGame}>
-        Join Game
-      </button>
-
+        <button onClick={joinGame}>
+          Join Game
+        </button>
+      </>
+      )
+    }
 
     {gameState?.status === "CHARACTER_SELECT" && (
       <div>
       
         <h2>Select Character</h2>
 
-        <button
-          type="button"
-          onClick={() =>
-            selectCharacter("DOUBLE_SKILL")
-          }
+        <select
+          onChange={(e) => {
+            setSelectingCharacter(e.target.value);
+          }}
         >
-          Double Skill
-        </button>
+          <option value="">Select a character</option>
+          <option value="DOUBLE_SKILL">Double Skill</option>
+          <option value="BLOCK_LINE">Block Line</option>
+          <option value="DOUBLE_DRAW">Double Draw</option>
+        </select>
 
-        <button
-          type="button"
-          onClick={() =>
-            selectCharacter("DOUBLE_DRAW")
+        <button onClick={() => {
+          if (selectingCharacter) {
+            selectCharacter(selectingCharacter);
           }
-        >
-          Double Draw
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            selectCharacter("DOUBLE_PLACEMENT")
-          }
-        >
-          Double Placement
+        }}>
+          confirm
         </button>
       </div>
     )}
 
-      {(gameState?.status === "PLAYING" || gameState?.status === "DRAW" || gameState?.status === "FINISHED") && (
-        <div>
-          <h2>Game State</h2>
+    {currentPlayer?.character?.type === "DOUBLE_SKILL" && (
+      <div>
+        <h2>Double Skill</h2>
+        <p>
+          Activations remaining:{" "}
+          {currentPlayer.character.doubleSkillActivationsRemaining}
+        </p>
 
-          <p>Status: {gameState.status}</p>
+        <p>
+          Double Skill:{" "}
+          {currentPlayer.character.doubleSkillActive
+            ? "Active"
+            : "Inactive"}
+        </p>
+
+        {!currentPlayer.character.doubleSkillActive &&
+          currentPlayer.character.doubleSkillActivationsRemaining > 0 && (
+            <button
+              type="button"
+              onClick={activateDoubleSkill}
+            >
+              Activate Double Skill
+            </button>
+          )}
+      </div>
+    )}
+
+    {currentPlayer?.character?.type === "BLOCK_LINE" && (
+      <div>
+        <h3>Block Line</h3>
+
+        <p>
+          Activations remaining:{" "}
+          {currentPlayer.character.blockLineActivationsRemaining}
+        </p>
+
+        {currentPlayer.character.blockLineActivationsRemaining > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setBlockLineMode("row")}
+            >
+              Block Row
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setBlockLineMode("column")}
+            >
+              Block Column
+            </button>
+          </div>
+        )}
+
+        {blockLineMode && (
+          <p>
+            Select a {blockLineMode} on the board.
+          </p>
+        )}
+      </div>
+    )}
+
+    {currentPlayer?.character?.type === "DOUBLE_DRAW" && (
+      <div>
+        <h3>Double Draw</h3>
+
+        <p>
+          Activations remaining:{" "}
+          {currentPlayer.character.doubleDrawActivationsRemaining}
+        </p>
+
+        <p>
+          Status:{" "}
+          {currentPlayer.character.doubleDrawActive
+            ? "Active"
+            : "Inactive"}
+        </p>
+
+        {!currentPlayer.character.doubleDrawActive &&
+          currentPlayer.character.doubleDrawActivationsRemaining > 0 && (
+            <button
+              type="button"
+              onClick={activateDoubleDraw}
+            >
+              Activate Double Draw
+            </button>
+          )}
+      </div>
+    )}
+
+    {(gameState?.status === "PLAYING" || gameState?.status === "DRAW" || gameState?.status === "FINISHED") && (
+        <div>
+          {/* <h2>Game State</h2>
+
+          <p>Status: {gameState.status}</p> */}
+
+          <div>
+            {gameState.players.map((player) => (
+              <div key={player.id}>
+                <h2>
+                  {player.id === socket.id ? "You" : "Opponent"} ({player.sign}) - Win Requirement: {player.winRequirement}
+                </h2>
+              </div>
+            ))}
+          </div>
 
           <div
             style={{
@@ -245,11 +365,36 @@ function App() {
                     cell.blocked &&
                     cell.blockedByPlayerId !== socket.id;
 
+                  const isBlockedLineByMe = gameState.blockedLines.some(
+                    (blockedLine) =>
+                      (blockedLine.type === "row" && blockedLine.index === rowIndex && blockedLine.blockedByPlayerId === socket.id) ||
+                      (blockedLine.type === "column" && blockedLine.index === columnIndex && blockedLine.blockedByPlayerId === socket.id)
+                  );
+
+                  const isBlockedLineByOppenent = gameState.blockedLines.some(
+                    (blockedLine) => 
+                      (blockedLine.type === "row" && blockedLine.index === rowIndex && blockedLine.blockedByPlayerId !== socket.id) ||
+                      (blockedLine.type === "column" && blockedLine.index === columnIndex && blockedLine.blockedByPlayerId !== socket.id)
+                  );
+
                   return (
                     <button
                       key={`${rowIndex}-${columnIndex}`}
                       type="button"
                       onClick={() => {
+                        if (blockLineMode) {
+                            activateBlockLine(
+                              blockLineMode,
+                              blockLineMode === "row"
+                                ? rowIndex
+                                : columnIndex
+                            );
+
+                            setBlockLineMode(null);
+
+                            return;
+                          }
+
                         if (activeCardId !== null) {
                           const activeCard = currentPlayer?.cards.find(
                             (card) => card.id === activeCardId
@@ -260,6 +405,18 @@ function App() {
                             activeCard?.type === "MOVE_SIGN_VERTICAL"
                           ) {
                             if (cell.sign !== currentPlayer?.sign) {
+                              return;
+                            }
+                          }
+
+                          if (
+                            activeCard?.type === "REMOVE_OPPONENT_SIGN"
+                          ) {
+                            // Must select opponent's sign
+                            if (
+                              cell.sign === null ||
+                              cell.sign === currentPlayer?.sign
+                            ) {
                               return;
                             }
                           }
@@ -287,9 +444,9 @@ function App() {
                           selectedCell?.row === rowIndex &&
                           selectedCell?.column === columnIndex
                             ? "lightgreen"
-                            : isBlockedByMe
+                            : isBlockedByMe || isBlockedLineByMe
                               ? "lightblue"
-                              : isBlockedByOpponent
+                              : isBlockedByOpponent || isBlockedLineByOppenent
                                 ? "lightcoral"
                                 : "white",
                       }}
@@ -302,7 +459,10 @@ function App() {
             </div>
           </div>
 
-          {currentPlayer && (
+          {
+          currentPlayer?.skillLocked ? (
+            <p>Your skills are locked. You cannot use skill cards this turn.</p>
+          ) : ( currentPlayer && (
             <div>
               <h2>Your Cards</h2>
 
@@ -415,6 +575,17 @@ function App() {
                                 >
                                   Use Card
                                 </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCell(null);
+                                    setSelectedDirection(null);
+                                    setActiveCardId(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
                               </div>
                             )}
                           </div>
@@ -493,6 +664,18 @@ function App() {
                                   }}
                                 >
                                   Use Card
+                                </button>
+
+                                
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCell(null);
+                                    setSelectedDirection(null);
+                                    setActiveCardId(null);
+                                  }}
+                                >
+                                  Cancel
                                 </button>
                               </div>
                             )}
@@ -664,6 +847,18 @@ function App() {
                                 >
                                   Use Card
                                 </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCardId(null);
+                                    setSelectedLineType(null);
+                                    setSelectedPosition(null);
+                                    setSelectedDirection(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
                               </div>
                             )}
                           </div>
@@ -709,6 +904,362 @@ function App() {
                                 >
                                   Use Card
                                 </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCell(null);
+                                    setActiveCardId(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {card.type === "ADD_ROW_COLUMN" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveCardId(card.id);
+                                setSelectedLineType(null);
+                                setSelectedPosition(null);
+                              }}
+                            >
+                              Add Row / Column
+                            </button>
+
+                            {activeCardId === card.id && (
+                              <div>
+                                <p>Choose what to add:</p>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedLineType("row");
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Row
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedLineType("column");
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Column
+                                </button>
+
+                                {selectedLineType && (
+                                  <div>
+                                    <p>
+                                      Add {selectedLineType}
+                                    </p>
+
+                                    <label>
+                                      Position:
+
+                                      <select
+                                        value={selectedPosition ?? ""}
+                                        onChange={(event) => {
+                                          setSelectedPosition(
+                                            Number(event.target.value)
+                                          );
+                                        }}
+                                      >
+                                        <option value="">
+                                          Select position
+                                        </option>
+
+                                        {Array.from(
+                                          {
+                                            length:
+                                              selectedLineType === "row"
+                                                ? gameState!.board.rows + 1
+                                                : gameState!.board.columns + 1,
+                                          },
+                                          (_, index) => (
+                                            <option
+                                              key={index}
+                                              value={index}
+                                            >
+                                              {index}
+                                            </option>
+                                          )
+                                        )}
+                                      </select>
+                                    </label>
+                                  </div>
+                                )}
+
+                                <button
+                                  type="button"
+                                  disabled={
+                                    selectedLineType === null ||
+                                    selectedPosition === null
+                                  }
+                                  onClick={() => {
+                                    if (
+                                      selectedLineType === null ||
+                                      selectedPosition === null
+                                    ) {
+                                      return;
+                                    }
+
+                                    useCard(card.id, {
+                                      lineType: selectedLineType,
+                                      position: selectedPosition,
+                                    });
+
+                                    setActiveCardId(null);
+                                    setSelectedLineType(null);
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Use Card
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCardId(null);
+                                    setSelectedLineType(null);
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {card.type === "REMOVE_ROW_COLUMN" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveCardId(card.id);
+                                setSelectedLineType(null);
+                                setSelectedPosition(null);
+                              }}
+                            >
+                              Remove Row / Column
+                            </button>
+
+                            {activeCardId === card.id && (
+                              <div>
+                                <p>Choose what to remove:</p>
+
+                                <button
+                                  type="button"
+                                  disabled={
+                                    gameState!.board.rows <= 3
+                                  }
+                                  onClick={() => {
+                                    setSelectedLineType("row");
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Row
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={
+                                    gameState!.board.columns <= 3
+                                  }
+                                  onClick={() => {
+                                    setSelectedLineType("column");
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Column
+                                </button>
+
+                                {selectedLineType && (
+                                  <div>
+                                    <p>
+                                      Remove {selectedLineType}
+                                    </p>
+
+                                    <label>
+                                      Position:
+
+                                      <select
+                                        value={selectedPosition ?? ""}
+                                        onChange={(event) => {
+                                          setSelectedPosition(
+                                            Number(event.target.value)
+                                          );
+                                        }}
+                                      >
+                                        <option value="">
+                                          Select position
+                                        </option>
+
+                                        {Array.from(
+                                          {
+                                            length:
+                                              selectedLineType === "row"
+                                                ? gameState!.board.rows
+                                                : gameState!.board.columns,
+                                          },
+                                          (_, index) => (
+                                            <option
+                                              key={index}
+                                              value={index}
+                                            >
+                                              {index}
+                                            </option>
+                                          )
+                                        )}
+                                      </select>
+                                    </label>
+                                  </div>
+                                )}
+
+                                <button
+                                  type="button"
+                                  disabled={
+                                    selectedLineType === null ||
+                                    selectedPosition === null
+                                  }
+                                  onClick={() => {
+                                    if (
+                                      selectedLineType === null ||
+                                      selectedPosition === null
+                                    ) {
+                                      return;
+                                    }
+
+                                    useCard(card.id, {
+                                      lineType: selectedLineType,
+                                      position: selectedPosition,
+                                    });
+
+                                    setActiveCardId(null);
+                                    setSelectedLineType(null);
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Use Card
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCardId(null);
+                                    setSelectedLineType(null);
+                                    setSelectedPosition(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {card.type === "OPPONENT_SKILL_LOCK" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                useCard(card.id, {});
+                              }}
+                            >
+                              Use Card
+                            </button>
+                          </div>
+                        )}
+
+                        {card.type === "INCREASE_OPPONENT_WIN_REQUIREMENT" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                useCard(card.id, {});
+                              }}
+                            >
+                              Use Card
+                            </button>
+                          </div>
+                        )}
+
+                        {card.type === "DECREASE_OWN_WIN_REQUIREMENT" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                useCard(card.id, {});
+                              }}
+                            >
+                              Use Card
+                            </button>
+                          </div>
+                        )}
+
+                        {card.type === "REMOVE_OPPONENT_SIGN" && (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveCardId(card.id);
+                                setSelectedCell(null);
+                              }}
+                            >
+                              Select Opponent Sign
+                            </button>
+
+                            {activeCardId === card.id && (
+                              <div>
+                                <p>
+                                  Click an opponent's sign on the board.
+                                </p>
+
+                                {selectedCell && (
+                                  <p>
+                                    Selected: Row {selectedCell.row},
+                                    Column {selectedCell.column}
+                                  </p>
+                                )}
+
+                                <button
+                                  type="button"
+                                  disabled={!selectedCell}
+                                  onClick={() => {
+                                    if (!selectedCell) {
+                                      return;
+                                    }
+
+                                    useCard(card.id, {
+                                      row: selectedCell.row,
+                                      column: selectedCell.column,
+                                    });
+
+                                    setSelectedCell(null);
+                                    setActiveCardId(null);
+                                  }}
+                                >
+                                  Remove Sign
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCell(null);
+                                    setActiveCardId(null);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
                               </div>
                             )}
                           </div>
@@ -720,6 +1271,7 @@ function App() {
                 ))}
               </div>
             </div>
+          )
           )}
 
           {/* <p>
@@ -750,7 +1302,7 @@ function App() {
             </div>
           ))} */}
         </div>
-      )}
+    )}
     </div>
   );
 }
